@@ -1627,17 +1627,17 @@ class Rational(Number):
 
         if not isinstance(p, SYMPY_INTS):
             p = Rational(p)
-            q *= p.q
-            p = p.p
+            p_num, p_den = p.p, p.q
         else:
-            p = int(p)
+            p_num, p_den = int(p), 1
 
         if not isinstance(q, SYMPY_INTS):
             q = Rational(q)
-            p *= q.q
-            q = q.p
+            q_num, q_den = q.p, q.q
         else:
-            q = int(q)
+            q_num, q_den = int(q), 1
+
+        p, q = p_num*q_den, p_den*q_num
 
         # p and q are now ints
         if q == 0:

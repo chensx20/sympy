@@ -321,6 +321,10 @@ def test_Integer_new():
     assert Integer(Rational('1.' + '9'*20)) == 1
 
 
+def test_issue_24543():
+    assert Rational('0.5', '100') == Rational(1, 200)
+
+
 def test_Rational_new():
     """"
     Test for Rational constructor
