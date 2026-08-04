@@ -256,6 +256,9 @@ class TensorProduct(Expr):
     def _eval_power(self, expt):
         return TensorProduct(*[arg ** expt for arg in self.args])
 
+    def _eval_expand_tensorproduct_pow(self, expt, **hints):
+        return TensorProduct(*[arg ** expt for arg in self.args])
+
     def _eval_expand_tensorproduct(self, **hints):
         """Distribute TensorProducts across addition."""
         args = self.args
@@ -286,15 +289,6 @@ class TensorProduct(Expr):
         else:
             return Mul(*[Tr(value).doit() if idx in indices else value
                          for idx, value in enumerate(exp.args)])
-
-
-def _eval_expand_tensorproduct_pow(self, **hints):
-    if isinstance(self.base, TensorProduct):
-        return TensorProduct(*[arg ** self.exp for arg in self.base.args])
-    return self
-
-
-Pow._eval_expand_tensorproduct = _eval_expand_tensorproduct_pow
 
 
 def tensor_product_simp_Mul(e):

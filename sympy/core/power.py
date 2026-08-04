@@ -1005,6 +1005,13 @@ class Pow(Expr):
             rv *= self.func(Mul(*other), e, evaluate=False)
         return rv
 
+    def _eval_expand_tensorproduct(self, **hints):
+        expand_tensorproduct_pow = getattr(
+            self.base, '_eval_expand_tensorproduct_pow', None)
+        if expand_tensorproduct_pow is None:
+            return self
+        return expand_tensorproduct_pow(self.exp, **hints)
+
     def _eval_expand_multinomial(self, **hints):
         """(a + b + ..)**n -> a**n + n*a**(n-1)*b + .., n is nonzero integer"""
 

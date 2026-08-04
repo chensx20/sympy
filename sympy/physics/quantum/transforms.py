@@ -270,6 +270,7 @@ def _postprocess_tp_pow(expr):
     if isinstance(base, TensorProduct) and exp.is_integer and exp.is_positive and base.kind == OperatorKind:
         new_args = [a**exp for a in base.args]
         return TensorProduct(*new_args)
+    return expr
 
 
 #-----------------------------------------------------------------------------

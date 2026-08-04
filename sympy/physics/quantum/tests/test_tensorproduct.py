@@ -1,5 +1,6 @@
 from __future__ import annotations
 from sympy.core.numbers import I
+from sympy.core.power import Pow
 from sympy.core.singleton import S
 from sympy.core.symbol import symbols
 from sympy.core.expr import unchanged
@@ -84,10 +85,14 @@ def test_tensor_product_simp():
 
 
 def test_tensor_product_expand_power():
-    assert (TP(S.One, S.One)**2).expand(tensorproduct=True) == TP(S.One, S.One)
+    expr = Pow(TP(S.One, S.One), 2, evaluate=False)
+    assert expr.is_Pow
+    assert expr.expand(tensorproduct=True) == TP(S.One, S.One)
 
     from sympy.physics.paulialgebra import Pauli
-    assert (TP(S.One, Pauli(3))**2).expand(tensorproduct=True) == TP(S.One, S.One)
+    expr = Pow(TP(S.One, Pauli(3)), 2, evaluate=False)
+    assert expr.is_Pow
+    assert expr.expand(tensorproduct=True) == TP(S.One, S.One)
 
 
 def test_issue_5923():
