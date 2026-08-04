@@ -285,6 +285,15 @@ class TensorProduct(Expr):
                          for idx, value in enumerate(exp.args)])
 
 
+def _eval_expand_tensorproduct_pow(self, **hints):
+    if isinstance(self.base, TensorProduct):
+        return TensorProduct(*[arg ** self.exp for arg in self.base.args])
+    return self
+
+
+Pow._eval_expand_tensorproduct = _eval_expand_tensorproduct_pow
+
+
 def tensor_product_simp_Mul(e):
     """Simplify a Mul with tensor products.
 

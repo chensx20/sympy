@@ -76,6 +76,18 @@ def test_tensor_product_simp():
         assert tensor_product_simp(x*TP(A, B)**2) == x*TP(A**2,B**2)
         assert tensor_product_simp(x*(TP(A, B)**2)*TP(C,D)) == x*TP(A**2*C,B**2*D)
         assert tensor_product_simp(TP(A,B)-TP(C,D)**y) == TP(A,B)-TP(C**y,D**y)
+        assert tensor_product_simp((TP(A, B)*TP(B, C))**2) == TP((A*B)**2, (B*C)**2)
+        assert tensor_product_simp(TP(S.One, S.One)**2) == TP(S.One, S.One)
+
+        from sympy.physics.paulialgebra import Pauli
+        assert tensor_product_simp(TP(S.One, Pauli(3))**2) == TP(S.One, S.One)
+
+
+def test_tensor_product_expand_power():
+    assert (TP(S.One, S.One)**2).expand(tensorproduct=True) == TP(S.One, S.One)
+
+    from sympy.physics.paulialgebra import Pauli
+    assert (TP(S.One, Pauli(3))**2).expand(tensorproduct=True) == TP(S.One, S.One)
 
 
 def test_issue_5923():
