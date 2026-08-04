@@ -801,8 +801,8 @@ class Permutation(Basic):
     def __new__(cls, *args, **kwargs):
         """
         Constructor for the Permutation object from a list or a
-        list of lists in which all elements of the permutation may
-        appear only once.
+        list of lists. For cycle input, overlapping cycles are
+        applied left-to-right.
 
         Examples
         ========
@@ -897,11 +897,11 @@ class Permutation(Basic):
         temp = flatten(args)
         if has_dups(temp):
             if is_cycle:
-                raise ValueError('there were repeated elements; to resolve '
-                'cycles use Cycle%s.' % ''.join([str(tuple(c)) for c in args]))
+                temp = set(temp)
             else:
                 raise ValueError('there were repeated elements.')
-        temp = set(temp)
+        else:
+            temp = set(temp)
 
         if not is_cycle and \
                 any(i not in temp for i in range(len(temp))):
