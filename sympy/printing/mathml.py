@@ -743,11 +743,6 @@ class MathMLPresentationPrinter(MathMLPrinterBase):
         return mrow
 
     def _print_Symbol(self, sym, style='plain'):
-        x = self.dom.createElement('mi')
-
-        if style == 'bold':
-            x.setAttribute('mathvariant', 'bold')
-
         def join(items):
             if len(items) > 1:
                 mrow = self.dom.createElement('mrow')
@@ -765,6 +760,13 @@ class MathMLPresentationPrinter(MathMLPrinterBase):
                 mi.appendChild(self.dom.createTextNode(items[0]))
                 return mi
 
+        def create_mi(text):
+            mi = self.dom.createElement('mi')
+            if style == 'bold':
+                mi.setAttribute('mathvariant', 'bold')
+            mi.appendChild(self.dom.createTextNode(text))
+            return mi
+
         # translate name, supers and subs to unicode characters
         def translate(s):
             if s in greek_unicode:
@@ -777,29 +779,26 @@ class MathMLPresentationPrinter(MathMLPrinterBase):
         supers = [translate(sup) for sup in supers]
         subs = [translate(sub) for sub in subs]
 
-        mname = self.dom.createElement('mi')
-        mname.appendChild(self.dom.createTextNode(name))
+        mname = create_mi(name)
         if len(supers) == 0:
             if len(subs) == 0:
-                x.appendChild(self.dom.createTextNode(name))
-            else:
-                msub = self.dom.createElement('msub')
-                msub.appendChild(mname)
-                msub.appendChild(join(subs))
-                x.appendChild(msub)
-        else:
-            if len(subs) == 0:
-                msup = self.dom.createElement('msup')
-                msup.appendChild(mname)
-                msup.appendChild(join(supers))
-                x.appendChild(msup)
-            else:
-                msubsup = self.dom.createElement('msubsup')
-                msubsup.appendChild(mname)
-                msubsup.appendChild(join(subs))
-                msubsup.appendChild(join(supers))
-                x.appendChild(msubsup)
-        return x
+                return mname
+            msub = self.dom.createElement('msub')
+            msub.appendChild(mname)
+            msub.appendChild(join(subs))
+            return msub
+
+        if len(subs) == 0:
+            msup = self.dom.createElement('msup')
+            msup.appendChild(mname)
+            msup.appendChild(join(supers))
+            return msup
+
+        msubsup = self.dom.createElement('msubsup')
+        msubsup.appendChild(mname)
+        msubsup.appendChild(join(subs))
+        msubsup.appendChild(join(supers))
+        return msubsup
 
     def _print_MatrixSymbol(self, sym):
         return self._print_Symbol(sym, style=self._settings['mat_symbol_style'])
