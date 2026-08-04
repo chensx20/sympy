@@ -614,15 +614,6 @@ class PythonCodePrinter(AbstractPythonCodePrinter):
     _print_fresnelc = CodePrinter._print_not_supported
     _print_fresnels = CodePrinter._print_not_supported
 
-    def _print_IndexedBase(self, expr):
-        return expr.name
-
-    def _print_Indexed(self, expr):
-        base = expr.args[0]
-        index = expr.args[1:]
-        return "{0}[{1}]".format(
-            self._print(base), ', '.join([self._print(ind) for ind in index]))
-
 
 for k in PythonCodePrinter._kf:
     setattr(PythonCodePrinter, '_print_%s' % k, _print_known_func)
