@@ -575,7 +575,7 @@ class PythonCodePrinter(AbstractPythonCodePrinter):
         return self._operators['not'] + ' ' + self.parenthesize(expr.args[0], PREC)
 
     def _print_IndexedBase(self, expr):
-        return expr.name
+        return self._print(expr.label)
 
     def _print_Indexed(self, expr):
         base = expr.args[0]
@@ -613,6 +613,15 @@ class PythonCodePrinter(AbstractPythonCodePrinter):
     _print_uppergamma = CodePrinter._print_not_supported
     _print_fresnelc = CodePrinter._print_not_supported
     _print_fresnels = CodePrinter._print_not_supported
+
+    def _print_IndexedBase(self, expr):
+        return expr.name
+
+    def _print_Indexed(self, expr):
+        base = expr.args[0]
+        index = expr.args[1:]
+        return "{0}[{1}]".format(
+            self._print(base), ', '.join([self._print(ind) for ind in index]))
 
 
 for k in PythonCodePrinter._kf:

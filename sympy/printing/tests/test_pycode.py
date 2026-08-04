@@ -25,8 +25,6 @@ from sympy.tensor.array.expressions.array_expressions import ArraySymbol, ArrayD
 from sympy.external import import_module
 from sympy.functions.special.gamma_functions import loggamma
 
-
-
 x, y, z = symbols('x y z')
 p = IndexedBase("p")
 
@@ -97,6 +95,12 @@ def test_PythonCodePrinter_print_Indexed():
             "printed_recursively(foo)[printed_recursively(a), printed_recursively(b)]")
 
 
+def test_PythonCodePrinter_print_Indexed_reserved_base():
+    printer = PythonCodePrinter()
+
+    assert printer.doprint(IndexedBase('if')[0]) == 'if_[0]'
+
+
 def test_PythonCodePrinter_standard():
     prntr = PythonCodePrinter()
 
@@ -126,7 +130,6 @@ def test_CmathPrinter():
     assert p.doprint(asinh(x)) == 'cmath.asinh(x)'
     assert p.doprint(acosh(x)) == 'cmath.acosh(x)'
     assert p.doprint(atanh(x)) == 'cmath.atanh(x)'
-
 
 def test_MpmathPrinter():
     p = MpmathPrinter()
