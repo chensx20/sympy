@@ -249,6 +249,11 @@ class AbstractPythonCodePrinter(CodePrinter):
             result.append(' else None)')
         return ''.join(result)
 
+    def _print_Indexed(self, expr):
+        base = self._print(expr.base)
+        indices = ', '.join(self._print(index) for index in expr.indices)
+        return '{}[{}]'.format(base, indices)
+
     def _print_Relational(self, expr):
         "Relational printer for Equality and Unequality"
         op = {
