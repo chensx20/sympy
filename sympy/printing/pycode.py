@@ -249,6 +249,9 @@ class AbstractPythonCodePrinter(CodePrinter):
             result.append(' else None)')
         return ''.join(result)
 
+    def _print_IndexedBase(self, expr):
+        return self._print(expr.label)
+
     def _print_Indexed(self, expr):
         base = self._print(expr.base)
         indices = ', '.join(self._print(index) for index in expr.indices)

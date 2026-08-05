@@ -11,9 +11,11 @@ from sympy.matrices import SparseMatrix, MatrixSymbol
 from sympy.printing.pycode import (
     MpmathPrinter, NumPyPrinter, PythonCodePrinter, pycode, SciPyPrinter
 )
+from sympy.tensor import IndexedBase
 from sympy.utilities.pytest import raises
 
 x, y, z = symbols('x y z')
+p = IndexedBase('p')
 
 
 def test_PythonCodePrinter():
@@ -34,6 +36,8 @@ def test_PythonCodePrinter():
                         (3, Gt(x, 0)), evaluate=False)) == '((2) if (x <= 0) else'\
                                                         ' (3) if (x > 0) else None)'
     assert prntr.doprint(sign(x)) == '(0.0 if x == 0 else math.copysign(1, x))'
+    assert prntr.doprint(p[0]) == 'p[0]'
+    assert pycode(p[0, 1]) == 'p[0, 1]'
 
 
 def test_MpmathPrinter():
