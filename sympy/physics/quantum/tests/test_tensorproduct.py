@@ -1,4 +1,4 @@
-from sympy import I, symbols, Matrix
+from sympy import I, Pow, symbols, Matrix
 
 from sympy.physics.quantum.commutator import Commutator as Comm
 from sympy.physics.quantum.tensorproduct import TensorProduct
@@ -47,6 +47,9 @@ def test_tensor_product_commutator():
 
 def test_tensor_product_simp():
     assert tensor_product_simp(TP(A, B)*TP(B, C)) == TP(A*B, B*C)
+    assert tensor_product_simp(Pow(TP(A, B), 2, evaluate=False)) == TP(A**2, B**2)
+    assert tensor_product_simp(TP(A, B)**2 * TP(B, C)) == TP(A**2*B, B**2*C)
+    assert tensor_product_simp(TP(A, B)**2 * C) == TP(A**2*C, B**2*C)
 
 
 def test_issue_5923():
