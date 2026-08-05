@@ -149,18 +149,26 @@ class LatexPrinter(Printer):
                 self._settings['mode'] == 'inline':
             self._settings['fold_short_frac'] = True
 
+        def _is_spacing_like_mul_symbol(symbol):
+            return symbol is None or symbol.strip() in {'', r'\,', r'\:', r'\;', r'\!'}
+
         mul_symbol_table = {
             None: r" ",
             "ldot": r" \,.\, ",
             "dot": r" \cdot ",
             "times": r" \times "
         }
+        mul_symbol = self._settings['mul_symbol']
 
-        self._settings['mul_symbol_latex'] = \
-            mul_symbol_table[self._settings['mul_symbol']]
+        if mul_symbol in mul_symbol_table:
+            self._settings['mul_symbol_latex'] = mul_symbol_table[mul_symbol]
+        else:
+            self._settings['mul_symbol_latex'] = mul_symbol
 
-        self._settings['mul_symbol_latex_numbers'] = \
-            mul_symbol_table[self._settings['mul_symbol'] or 'dot']
+        if mul_symbol == "ldot" or _is_spacing_like_mul_symbol(mul_symbol):
+            self._settings['mul_symbol_latex_numbers'] = mul_symbol_table['dot']
+        else:
+            self._settings['mul_symbol_latex_numbers'] = self._settings['mul_symbol_latex']
 
         self._delim_dict = {'(': ')', '[': ']'}
 
@@ -2155,7 +2163,7 @@ def latex(expr, **settings):
     \frac{1}{2 \pi} \int r\, dr
 
     mul_symbol: The symbol to use for multiplication. Can be one of None,
-    "ldot", "dot", or "times".
+    "ldot", "dot", or "times", or any literal LaTeX string.
 
     >>> print(latex((2*tau)**sin(Rational(7,2)), mul_symbol="times"))
     \left(2 \times \tau\right)^{\sin{\left (\frac{7}{2} \right )}}
