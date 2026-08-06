@@ -1,11 +1,13 @@
-from __future__ import annotations
-import sympy
-import tempfile
 import os
+import tempfile
+
+import sympy
 from pathlib import Path
+
 from sympy.core.mod import Mod
 from sympy.core.relational import Eq
 from sympy.core.symbol import symbols
+from sympy.matrices import MatrixSymbol
 from sympy.external import import_module
 from sympy.tensor import IndexedBase, Idx
 from sympy.utilities.autowrap import autowrap, ufuncify, CodeWrapError
@@ -255,6 +257,16 @@ def test_issue_10274_C_cython():
 def test_issue_15337_C_cython():
     has_module('Cython')
     runtest_issue_15337('C89', 'cython')
+
+
+def test_issue_16792_C_cython():
+    has_module('numpy')
+    has_module('Cython')
+
+    x = MatrixSymbol('x', 2, 1)
+    func = autowrap(1.0, backend='cython', args=(x,))
+
+    assert func(numpy.array([[1.0], [2.0]])) == 1.0
 
 
 def test_autowrap_custom_printer():
