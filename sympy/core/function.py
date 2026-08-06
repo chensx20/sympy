@@ -507,7 +507,8 @@ class Function(Application, Expr):
             func = getattr(mpmath, fname)
         except (AttributeError, KeyError):
             try:
-                return Float(self._imp_(*self.args), prec)
+                args = [arg.evalf(prec) for arg in self.args]
+                return Float(self._imp_(*args), prec)
             except (AttributeError, TypeError, ValueError):
                 return
 

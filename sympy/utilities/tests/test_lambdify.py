@@ -666,6 +666,12 @@ def test_lambdify_imps():
     lam = lambdify(x, f(x), d, use_imps=False)
     assert lam(3) == 102
 
+
+def test_issue_12092():
+    f = implemented_function("f", lambda x: x**2)
+    g = implemented_function("g", lambda x: 2*x)
+    assert f(g(2)).evalf() == 16.0
+
 def test_dummification():
     t = symbols('t')
     F = Function('F')
