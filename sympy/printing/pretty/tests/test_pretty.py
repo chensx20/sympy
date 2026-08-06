@@ -270,6 +270,7 @@ def test_upretty_greek():
     assert upretty( Symbol('alpha^+_1') ) == 'α⁺₁'
     assert upretty( Symbol('beta') ) == 'β'
     assert upretty(Symbol('lambda')) == 'λ'
+    assert upretty(Symbol('ω1')) == 'ω₁'
 
 
 def test_upretty_multiindex():
@@ -289,6 +290,13 @@ def test_upretty_sub_super():
     assert upretty( Symbol("F_1_2^3^4") ) == 'F³ ⁴₁ ₂'
     assert upretty( Symbol("F_1_2_3_4") ) == 'F₁ ₂ ₃ ₄'
     assert upretty( Symbol("F^1^2^3^4") ) == 'F¹ ² ³ ⁴'
+
+
+def test_upretty_unicode_greek_trailing_digits():
+    assert upretty(Matrix([[-Symbol('t_0')*Symbol('ω0'),
+                            -Symbol('t_1')*Symbol('ω0'),
+                            -Symbol('t_2')*Symbol('ω0')]])) == \
+        '[-t₀⋅ω₀  -t₁⋅ω₀  -t₂⋅ω₀]'
 
 
 def test_upretty_subs_missing_in_24():

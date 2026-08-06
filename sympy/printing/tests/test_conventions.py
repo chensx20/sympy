@@ -9,6 +9,7 @@ def test_super_sub():
     assert split_super_sub("beta_13_2") == ("beta", [], ["13", "2"])
     assert split_super_sub("beta_132_20") == ("beta", [], ["132", "20"])
     assert split_super_sub("beta_13") == ("beta", [], ["13"])
+    assert split_super_sub("β13") == ("β", [], ["13"])
     assert split_super_sub("x_a_b") == ("x", [], ["a", "b"])
     assert split_super_sub("x_1_2_3") == ("x", [], ["1", "2", "3"])
     assert split_super_sub("x_a_b1") == ("x", [], ["a", "b1"])
@@ -29,6 +30,8 @@ def test_super_sub():
     assert split_super_sub("x__a__b__c__d") == ("x", ["a", "b", "c", "d"], [])
     assert split_super_sub("alpha_11") == ("alpha", [], ["11"])
     assert split_super_sub("alpha_11_11") == ("alpha", [], ["11", "11"])
+    assert split_super_sub("ω1") == ("ω", [], ["1"])
+    assert split_super_sub("ω0") == ("ω", [], ["0"])
     assert split_super_sub("") == ("", [], [])
 
 
