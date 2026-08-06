@@ -7,6 +7,7 @@ import types
 
 from sympy.assumptions import Q
 from sympy.core import Symbol, Function, Float, Rational, Integer, I, Mul, Pow, Eq
+from sympy.core.relational import Gt, Ge, Lt, Le, Ne
 from sympy.functions import exp, factorial, factorial2, sin, Min, Max
 from sympy.logic import And
 from sympy.series import Limit
@@ -272,6 +273,22 @@ def test_convert_equals_signs():
     assert parse_expr("y = x", transformations=transformations) == Eq(y, x)
     assert parse_expr("(2*y = x) = False",
         transformations=transformations) == Eq(Eq(2*y, x), False)
+
+
+def test_issue_24288():
+    x = Symbol('x')
+    y = Symbol('y')
+    z = Symbol('z')
+
+    assert parse_expr('x < y', evaluate=False) == Lt(x, y, evaluate=False)
+    assert parse_expr('x <= y', evaluate=False) == Le(x, y, evaluate=False)
+    assert parse_expr('x > y', evaluate=False) == Gt(x, y, evaluate=False)
+    assert parse_expr('x >= y', evaluate=False) == Ge(x, y, evaluate=False)
+    assert parse_expr('x != y', evaluate=False) == Ne(x, y, evaluate=False)
+    assert parse_expr('x < y < z', evaluate=False) == And(
+        Lt(x, y, evaluate=False), Lt(y, z, evaluate=False), evaluate=False
+    )
+
 
 
 def test_parse_function_issue_3539():

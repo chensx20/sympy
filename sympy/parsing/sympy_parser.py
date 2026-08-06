@@ -1118,6 +1118,15 @@ class EvaluateFalseTransformer(ast.NodeTransformer):
         'cosh', 'coth', 'csch', 'sech', 'sinh', 'tanh',
         'exp', 'ln', 'log', 'sqrt', 'cbrt',
     )
+    relations = {
+        ast.Eq: 'Eq',
+        ast.NotEq: 'Ne',
+        ast.Lt: 'Lt',
+        ast.LtE: 'Le',
+        ast.Gt: 'Gt',
+        ast.GtE: 'Ge',
+    }
+
 
     def flatten(self, args, func):
         result = []
@@ -1145,7 +1154,7 @@ class EvaluateFalseTransformer(ast.NodeTransformer):
                 right = ast.Call(
                     func=ast.Name(id='Mul', ctx=ast.Load()),
                     args=[ast.UnaryOp(op=ast.USub(), operand=ast.Num(1)), right],
-                    keywords=[ast.keyword(arg='evaluate', value=ast.NameConstant(value=False, ctx=ast.Load()))],
+                    keywords=[ast.keyword(arg='evaluate', value=ast.Constant(value=False))],
                     starargs=None,
                     kwargs=None
                 )
@@ -1154,27 +1163,27 @@ class EvaluateFalseTransformer(ast.NodeTransformer):
                     left, right = right, left
                     rev = True
                     left = ast.Call(
-                    func=ast.Name(id='Pow', ctx=ast.Load()),
-                    args=[left, ast.UnaryOp(op=ast.USub(), operand=ast.Num(1))],
-                    keywords=[ast.keyword(arg='evaluate', value=ast.NameConstant(value=False, ctx=ast.Load()))],
-                    starargs=None,
-                    kwargs=None
-                )
+                        func=ast.Name(id='Pow', ctx=ast.Load()),
+                        args=[left, ast.UnaryOp(op=ast.USub(), operand=ast.Num(1))],
+                        keywords=[ast.keyword(arg='evaluate', value=ast.Constant(value=False))],
+                        starargs=None,
+                        kwargs=None
+                    )
                 else:
                     right = ast.Call(
-                    func=ast.Name(id='Pow', ctx=ast.Load()),
-                    args=[right, ast.UnaryOp(op=ast.USub(), operand=ast.Num(1))],
-                    keywords=[ast.keyword(arg='evaluate', value=ast.NameConstant(value=False, ctx=ast.Load()))],
-                    starargs=None,
-                    kwargs=None
-                )
+                        func=ast.Name(id='Pow', ctx=ast.Load()),
+                        args=[right, ast.UnaryOp(op=ast.USub(), operand=ast.Num(1))],
+                        keywords=[ast.keyword(arg='evaluate', value=ast.Constant(value=False))],
+                        starargs=None,
+                        kwargs=None
+                    )
 
             if rev:  # undo reversal
                 left, right = right, left
             new_node = ast.Call(
                 func=ast.Name(id=sympy_class, ctx=ast.Load()),
                 args=[left, right],
-                keywords=[ast.keyword(arg='evaluate', value=ast.NameConstant(value=False, ctx=ast.Load()))],
+                keywords=[ast.keyword(arg='evaluate', value=ast.Constant(value=False))],
                 starargs=None,
                 kwargs=None
             )
@@ -1186,10 +1195,37 @@ class EvaluateFalseTransformer(ast.NodeTransformer):
             return new_node
         return node
 
+    def visit_Compare(self, node):
+        left = self.visit(node.left)
+        comparisons = []
+
+        for operator, comparator in zip(node.ops, node.comparators):
+            relation = self.relations[operator.__class__]
+            right = self.visit(comparator)
+            comparisons.append(ast.Call(
+                func=ast.Name(id=relation, ctx=ast.Load()),
+                args=[left, right],
+                keywords=[ast.keyword(arg='evaluate', value=ast.Constant(value=False))],
+                starargs=None,
+                kwargs=None
+            ))
+            left = right
+
+        if len(comparisons) == 1:
+            return comparisons[0]
+
+        return ast.Call(
+            func=ast.Name(id='And', ctx=ast.Load()),
+            args=comparisons,
+            keywords=[ast.keyword(arg='evaluate', value=ast.Constant(value=False))],
+            starargs=None,
+            kwargs=None
+        )
+
     def visit_Call(self, node):
         new_node = self.generic_visit(node)
         if isinstance(node.func, ast.Name) and node.func.id in self.functions:
-            new_node.keywords.append(ast.keyword(arg='evaluate', value=ast.NameConstant(value=False, ctx=ast.Load())))
+            new_node.keywords.append(ast.keyword(arg='evaluate', value=ast.Constant(value=False)))
         return new_node
 
 
