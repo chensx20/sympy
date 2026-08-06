@@ -30,8 +30,11 @@ def test_super_sub():
     assert split_super_sub("x__a__b__c__d") == ("x", ["a", "b", "c", "d"], [])
     assert split_super_sub("alpha_11") == ("alpha", [], ["11"])
     assert split_super_sub("alpha_11_11") == ("alpha", [], ["11", "11"])
+    assert split_super_sub("w𝟙") == ("w", [], ["𝟙"])
+    assert split_super_sub("w𝟙𝟙") == ("w", [], ["𝟙𝟙"])
     assert split_super_sub("ω1") == ("ω", [], ["1"])
     assert split_super_sub("ω0") == ("ω", [], ["0"])
+    assert split_super_sub("ω𝟙^α") == ("ω", ["α"], ["𝟙"])
     assert split_super_sub("") == ("", [], [])
 
 
