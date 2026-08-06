@@ -903,6 +903,11 @@ def test_diophantine_permute_sign():
     complete_soln = set(signed_permutations(base_sol.pop()))
     assert diophantine(eq, permute=True) == complete_soln
 
+    eq = n1**4 + m1**4 - 2**4 - 3**4
+    complete_soln = set(signed_permutations((2, 3)))
+    assert diophantine(eq, syms=(m1, n1), permute=True) == complete_soln
+    assert diophantine(eq, syms=(n1, m1), permute=True) == complete_soln
+
     eq = a**2 + b**2 + c**2 + d**2 + e**2 - 234
     assert len(diophantine(eq)) == 35
     assert len(diophantine(eq, permute=True)) == 62000
