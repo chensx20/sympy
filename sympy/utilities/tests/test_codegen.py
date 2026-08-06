@@ -7,6 +7,7 @@ from sympy.core.symbol import Symbol
 from sympy.functions.special.error_functions import erf
 from sympy.integrals.integrals import Integral
 from sympy.matrices import Matrix, MatrixSymbol
+from sympy.tensor import IndexedBase
 from sympy.utilities.codegen import (
     codegen, make_routine, CCodeGen, C89CodeGen, C99CodeGen, InputArgument,
     CodeGenError, FCodeGen, CodeGenArgumentListError, OutputArgument,
@@ -159,6 +160,32 @@ def test_c_code_argument_order():
         "}\n"
     )
     assert source == expected
+
+
+def test_ccode_unused_array_arg():
+    matrix = MatrixSymbol('matrix', 2, 1)
+    indexed = IndexedBase('indexed', shape=(3,))
+    code_gen = C99CodeGen()
+
+    matrix_routine = make_routine('test_matrix', 1.0,
+        argument_sequence=[matrix])
+    matrix_header = get_string(code_gen.dump_h, [matrix_routine])
+    assert matrix_header == (
+        '#ifndef PROJECT__FILE__H\n'
+        '#define PROJECT__FILE__H\n'
+        'double test_matrix(double *matrix);\n'
+        '#endif\n'
+    )
+
+    indexed_routine = make_routine('test_indexed', 1.0,
+        argument_sequence=[indexed])
+    indexed_header = get_string(code_gen.dump_h, [indexed_routine])
+    assert indexed_header == (
+        '#ifndef PROJECT__FILE__H\n'
+        '#define PROJECT__FILE__H\n'
+        'double test_indexed(double *indexed);\n'
+        '#endif\n'
+    )
 
 
 def test_simple_c_header():

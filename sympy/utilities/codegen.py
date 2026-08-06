@@ -716,10 +716,15 @@ class CodeGen:
 
         if argument_sequence is not None:
             # if the user has supplied IndexedBase instances, we'll accept that
+            sequence_dimensions = {}
             new_sequence = []
             for arg in argument_sequence:
                 if isinstance(arg, IndexedBase):
+                    sequence_dimensions[arg.label] = dimensions(arg)
                     new_sequence.append(arg.label)
+                elif isinstance(arg, MatrixSymbol):
+                    sequence_dimensions[arg] = dimensions(arg)
+                    new_sequence.append(arg)
                 else:
                     new_sequence.append(arg)
             argument_sequence = new_sequence
@@ -737,10 +742,9 @@ class CodeGen:
                 try:
                     new_args.append(name_arg_dict[symbol])
                 except KeyError:
-                    if isinstance(symbol, (IndexedBase, MatrixSymbol)):
-                        metadata = {'dimensions': dimensions(symbol)}
-                    else:
-                        metadata = {}
+                    metadata = {}
+                    if symbol in sequence_dimensions:
+                        metadata['dimensions'] = sequence_dimensions[symbol]
                     new_args.append(InputArgument(symbol, **metadata))
             arg_list = new_args
 
