@@ -280,6 +280,7 @@ def test_issue_24288():
     y = Symbol('y')
     z = Symbol('z')
 
+    assert parse_expr('x == y', evaluate=False) == Eq(x, y, evaluate=False)
     assert parse_expr('x < y', evaluate=False) == Lt(x, y, evaluate=False)
     assert parse_expr('x <= y', evaluate=False) == Le(x, y, evaluate=False)
     assert parse_expr('x > y', evaluate=False) == Gt(x, y, evaluate=False)
@@ -288,7 +289,29 @@ def test_issue_24288():
     assert parse_expr('x < y < z', evaluate=False) == And(
         Lt(x, y, evaluate=False), Lt(y, z, evaluate=False), evaluate=False
     )
+    assert parse_expr('(x + 1) < (y + 2)', evaluate=False) == Lt(
+        parse_expr('x + 1', evaluate=False),
+        parse_expr('y + 2', evaluate=False),
+        evaluate=False,
+    )
+    assert parse_expr('(x + 1) < (y + 2) < (z + 3)', evaluate=False) == And(
+        Lt(
+            parse_expr('x + 1', evaluate=False),
+            parse_expr('y + 2', evaluate=False),
+            evaluate=False,
+        ),
+        Lt(
+            parse_expr('y + 2', evaluate=False),
+            parse_expr('z + 3', evaluate=False),
+            evaluate=False,
+        ),
+        evaluate=False,
+    )
 
+    raises(ValueError, lambda: parse_expr('x in y', evaluate=False))
+    raises(ValueError, lambda: parse_expr('x is y', evaluate=False))
+    raises(ValueError, lambda: parse_expr('x not in y', evaluate=False))
+    raises(ValueError, lambda: parse_expr('x is not y', evaluate=False))
 
 
 def test_parse_function_issue_3539():

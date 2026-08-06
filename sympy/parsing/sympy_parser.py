@@ -1200,7 +1200,10 @@ class EvaluateFalseTransformer(ast.NodeTransformer):
         comparisons = []
 
         for operator, comparator in zip(node.ops, node.comparators):
-            relation = self.relations[operator.__class__]
+            operator_type = operator.__class__
+            if operator_type not in self.relations:
+                raise ValueError("unsupported comparison operator in evaluate=False")
+            relation = self.relations[operator_type]
             right = self.visit(comparator)
             comparisons.append(ast.Call(
                 func=ast.Name(id=relation, ctx=ast.Load()),
