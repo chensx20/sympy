@@ -332,6 +332,9 @@ def dup_sqf_list(f, K, all=False):
 
         i += 1
 
+    if result:
+        result = sorted(result, key=lambda item: (item[1], item[0]))
+
     return coeff, result
 
 

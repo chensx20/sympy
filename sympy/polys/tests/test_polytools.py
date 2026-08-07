@@ -2306,6 +2306,11 @@ def test_sqf():
     assert sqf(f, x) == g*h**2
     assert sqf(f, (x,)) == g*h**2
 
+    expr = (x - 2)**2*(x + 1)**2*(x - 3)
+    factors = sqf_list(expr)
+    assert factors == (1, [(x - 3, 1), (x - 2, 2), (x + 1, 2)])
+    assert sqf(expr) == Mul(*[factor**exp for factor, exp in factors[1]])
+
     d = x**2 + y**2
 
     assert sqf(f/d) == (g*h**2)/d
