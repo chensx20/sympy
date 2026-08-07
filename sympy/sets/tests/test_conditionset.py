@@ -128,6 +128,14 @@ def test_subs_CondSet():
         n, n < x, Interval(-oo, 0)).subs(x, p) == S.EmptySet
     assert ConditionSet(f(x), f(x) < 1, {w, z}
         ).subs(f(x), y) == ConditionSet(y, y < 1, {w, z})
+    failing = ConditionSet(x, Eq(sin(x), y), S.Reals)
+    expected = ConditionSet(
+        x, Eq(sin(x), S(1)/3), S.Reals)
+    assert failing.subs(y, S(1)/3) == expected
+    assert failing.subs(y, S(1)/3, simultaneous=True) == expected
+    assert ConditionSet(x, Eq(sin(x), y), imageset(Lambda(x, 2*x), S.Integers)
+        ).subs(y, S(1)/3) == ConditionSet(
+            x, Eq(sin(x), S(1)/3), imageset(Lambda(x, 2*x), S.Integers))
 
 
 def test_subs_CondSet_tebr():
