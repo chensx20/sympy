@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from typing import Any, Dict
 
 from sympy.testing.pytest import raises
@@ -102,14 +103,17 @@ def test_list():
 def test_dict():
     sT({}, "{}")
     sT({x: y}, "{Symbol('x'): Symbol('y')}")
-    sT({x: 1, y: Integer(2)},
-       "{Symbol('x'): 1, Symbol('y'): Integer(2)}")
+    expr = {x: 1, y: Integer(2)}
+    items = list(expr.items())
+    sT(expr, "{%s}" % ', '.join(
+        "%s: %s" % (srepr(key), srepr(value)) for key, value in items))
+    assert list(expr.items()) == items
     sT({(x,): (y, Integer(2))},
        "{(Symbol('x'),): (Symbol('y'), Integer(2))}")
 
 
 def test_dict_insertion_order():
-    expr = {y: 2, x: 1}
+    expr = OrderedDict([(y, 2), (x, 1)])
     sT(expr, "{Symbol('y'): 2, Symbol('x'): 1}")
     assert list(expr.items()) == [(y, 2), (x, 1)]
 
