@@ -339,9 +339,6 @@ def real_root(arg, n=None, evaluate=None):
 
 class MinMaxBase(Expr, LatticeOp):
     def __new__(cls, *args, **assumptions):
-        if not args:
-            raise ValueError("The Max/Min functions must have arguments.")
-
         args = (sympify(arg) for arg in args)
 
         # first standard filter, for cls.zero and cls.identity
@@ -646,6 +643,8 @@ class Max(MinMaxBase, Application):
     """
     Return, if possible, the maximum value of the list.
 
+    When no arguments are given, return negative infinity.
+
     When number of arguments is equal one, then
     return this argument.
 
@@ -675,6 +674,8 @@ class Max(MinMaxBase, Application):
     >>> p = Symbol('p', positive=True)
     >>> n = Symbol('n', negative=True)
 
+    >>> Max()
+    -oo
     >>> Max(x, -2)                  #doctest: +SKIP
     Max(x, -2)
     >>> Max(x, -2).subs(x, 3)
@@ -765,6 +766,9 @@ class Max(MinMaxBase, Application):
 class Min(MinMaxBase, Application):
     """
     Return, if possible, the minimum value of the list.
+
+    When no arguments are given, return positive infinity.
+
     It is named ``Min`` and not ``min`` to avoid conflicts
     with the built-in function ``min``.
 
@@ -776,6 +780,8 @@ class Min(MinMaxBase, Application):
     >>> p = Symbol('p', positive=True)
     >>> n = Symbol('n', negative=True)
 
+    >>> Min()
+    oo
     >>> Min(x, -2)                  #doctest: +SKIP
     Min(x, -2)
     >>> Min(x, -2).subs(x, 3)
