@@ -192,6 +192,42 @@ def test_kahane_algorithm():
     execute_gamma_simplify_tests_for_function(tfunc, D=4)
 
 
+def test_kahane_simplify_leading_free_indices():
+    mu, rho, sigma, tau, a, b = tensor_indices(
+        'mu, rho, sigma, tau, a, b', LorentzIndex)
+
+    t = G(rho)*G(sigma)*G(mu)*G(-mu)
+    assert _is_tensor_eq(kahane_simplify(t), 4*G(rho)*G(sigma))
+    assert _is_tensor_eq(simplify_gamma_expression(t), 4*G(rho)*G(sigma))
+
+    t = G(rho)*G(sigma)*G(tau)*G(mu)*G(-mu)
+    assert _is_tensor_eq(kahane_simplify(t), 4*G(rho)*G(sigma)*G(tau))
+
+    t = G(-rho)*G(sigma)*G(mu)*G(-mu)
+    assert _is_tensor_eq(kahane_simplify(t), 4*G(-rho)*G(sigma))
+
+    t = G(rho)*G(sigma)*G(mu)*G(-mu)*G(tau)
+    assert _is_tensor_eq(kahane_simplify(t), 4*G(rho)*G(sigma)*G(tau))
+
+    t = G(rho)*G(sigma)*G(mu)*G(a)*G(-mu)
+    assert _is_tensor_eq(kahane_simplify(t), -2*G(rho)*G(sigma)*G(a))
+
+    t = G(rho)*G(sigma)*G(mu)*G(a)*G(b)*G(-mu)
+    assert _is_tensor_eq(kahane_simplify(t),
+        2*G(rho)*G(sigma)*G(a)*G(b) + 2*G(rho)*G(sigma)*G(b)*G(a))
+
+    t = G(mu)*G(-mu)*G(rho)*G(sigma)
+    assert _is_tensor_eq(kahane_simplify(t), 4*G(rho)*G(sigma))
+
+    t = G(rho)*G(mu)*G(-mu)
+    assert _is_tensor_eq(kahane_simplify(t), 4*G(rho))
+
+    t = G(rho)*G(sigma)
+    assert _is_tensor_eq(kahane_simplify(t), t)
+
+    assert _is_tensor_eq(kahane_simplify(G(mu)*G(-mu)), 4*eye(4))
+
+
 def test_kahane_simplify1():
     i0,i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15 = tensor_indices('i0:16', LorentzIndex)
     mu, nu, rho, sigma = tensor_indices("mu, nu, rho, sigma", LorentzIndex)
