@@ -203,15 +203,24 @@ def test_sympy__codegen__ast__NoneToken():
 
 def test_sympy__codegen__ast__String():
     from sympy.codegen.ast import String
-    assert _test_args(String('foobar'))
+    for text in ('', 'foobar'):
+        obj = String(text)
+        assert _test_args(obj)
+        assert obj.func(*obj.args) == obj
 
 def test_sympy__codegen__ast__QuotedString():
     from sympy.codegen.ast import QuotedString
-    assert _test_args(QuotedString('foobar'))
+    for text in ('', 'foobar'):
+        obj = QuotedString(text)
+        assert _test_args(obj)
+        assert obj.func(*obj.args) == obj
 
 def test_sympy__codegen__ast__Comment():
     from sympy.codegen.ast import Comment
-    assert _test_args(Comment('this is a comment'))
+    for text in ('', 'this is a comment'):
+        obj = Comment(text)
+        assert _test_args(obj)
+        assert obj.func(*obj.args) == obj
 
 def test_sympy__codegen__ast__Node():
     from sympy.codegen.ast import Node
