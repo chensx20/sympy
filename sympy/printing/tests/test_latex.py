@@ -328,6 +328,10 @@ def test_latex_symbols():
     assert latex(Symbol('omega') ** Symbol('beta')) == r"\omega^{\beta}"
 
 
+def test_latex_unicode_implicit_subscripts():
+    assert latex(Symbol('\u03c90')) == latex(Symbol('\u03c9_0')) == '\u03c9_{0}'
+
+
 @XFAIL
 def test_latex_symbols_failing():
     rho, mass, volume = symbols('rho, mass, volume')

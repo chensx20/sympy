@@ -341,6 +341,13 @@ def test_content_mathml_relational():
     assert mml_4.childNodes[2].childNodes[0].nodeValue == 'x'
 
 
+def test_content_unicode_implicit_subscripts():
+    expected = ('<ci><mml:msub><mml:mi>&#969;</mml:mi>'
+                '<mml:mi>0</mml:mi></mml:msub></ci>')
+    assert mp.doprint(Symbol('\u03c90')) == expected
+    assert mp.doprint(Symbol('\u03c9_0')) == expected
+
+
 def test_content_symbol():
     mml = mp._print(x)
     assert mml.nodeName == 'ci'
@@ -942,6 +949,12 @@ def test_presentation_mathml_relational():
     assert mml_4.childNodes[1].childNodes[0].nodeValue == '<'
     assert mml_4.childNodes[2].nodeName == 'mi'
     assert mml_4.childNodes[2].childNodes[0].nodeValue == 'x'
+
+
+def test_presentation_unicode_implicit_subscripts():
+    expected = '<msub><mi>&#969;</mi><mi>0</mi></msub>'
+    assert mpp.doprint(Symbol('\u03c90')) == expected
+    assert mpp.doprint(Symbol('\u03c9_0')) == expected
 
 
 def test_presentation_symbol():
