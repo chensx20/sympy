@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from typing import Any, Dict
 
 from sympy.testing.pytest import raises
@@ -97,6 +98,97 @@ def test_Integer():
 
 def test_list():
     sT([x, Integer(4)], "[Symbol('x'), Integer(4)]")
+
+
+def test_dict():
+    sT({}, "{}")
+    sT({x: y}, "{Symbol('x'): Symbol('y')}")
+    expr = {x: 1, y: Integer(2)}
+    items = list(expr.items())
+    sT(expr, "{%s}" % ', '.join(
+        "%s: %s" % (srepr(key), srepr(value)) for key, value in items))
+    assert list(expr.items()) == items
+    sT({(x,): (y, Integer(2))},
+       "{(Symbol('x'),): (Symbol('y'), Integer(2))}")
+
+
+def test_dict_insertion_order():
+    expr = OrderedDict([(y, 2), (x, 1)])
+    sT(expr, "{Symbol('y'): 2, Symbol('x'): 1}")
+    assert list(expr.items()) == [(y, 2), (x, 1)]
+
+
+def test_set():
+    sT(set(), "set()")
+    sT({x}, "{Symbol('x')}")
+    sT({(x, y)}, "{(Symbol('x'), Symbol('y'))}")
+    expr = {x, y}
+    assert srepr(expr) in ("{Symbol('x'), Symbol('y')}",
+                           "{Symbol('y'), Symbol('x')}")
+    assert srepr(expr) == "{%s}" % ', '.join(srepr(e) for e in expr)
+    assert eval(srepr(expr), ENV) == expr
+    assert expr == {x, y}
+
+
+def test_native_container_scalar_types():
+    values = (7, Integer(2), 1.5, True, None, "a'b\\c")
+    dictionary = dict(enumerate(values))
+    reconstructed = eval(srepr(dictionary), ENV)
+    assert reconstructed == dictionary
+    assert [type(reconstructed[i]) for i in dictionary] == [
+        type(value) for value in values]
+    elements = set(values)
+    reconstructed = eval(srepr(elements), ENV)
+    assert reconstructed == elements
+    assert {type(value) for value in reconstructed} == {
+        type(value) for value in elements}
+    sT({"a'b\\c": 'value'},
+       "{%s: 'value'}" % repr("a'b\\c"))
+    sT({True: None}, "{True: None}")
+    sT({True}, "{True}")
+
+
+def test_native_container_nesting():
+    expr = {x: [{y: ({x}, set(), {})}]}
+    sT(expr, "{Symbol('x'): [{Symbol('y'): ({Symbol('x')}, set(), {})}]}")
+    sT([{x: y}, ({x},)],
+       "[{Symbol('x'): Symbol('y')}, ({Symbol('x')},)]")
+    assert expr == {x: [{y: ({x}, set(), {})}]}
+
+
+def test_native_container_assumptions():
+    positive = Symbol('positive', positive=True)
+    integer = Symbol('integer', integer=True)
+    sT({positive: integer},
+       "{Symbol('positive', positive=True): Symbol('integer', integer=True)}")
+    sT({positive}, "{Symbol('positive', positive=True)}")
+
+
+def test_native_container_printmethod():
+    class R(Abs):
+        def _sympyrepr(self, printer):
+            return "hook(%s)" % printer._print(self.args[0])
+
+    assert srepr({R(x): [R(y)]}) == (
+        "{hook(Symbol('x')): [hook(Symbol('y'))]}")
+    assert srepr({R(x)}) == "{hook(Symbol('x'))}"
+
+
+def test_native_container_settings():
+    expr = x**2 + 1
+    expected = "Add(Integer(1), Pow(Symbol('x'), Integer(2)))"
+    assert srepr({x: expr}, order='old') == (
+        "{Symbol('x'): %s}" % expected)
+    assert srepr({expr}, order='old') == "{%s}" % expected
+
+
+def test_sympy_containers():
+    from sympy import Dict, FiniteSet, Tuple
+
+    sT(Dict({x: y}), "Dict(Tuple(Symbol('x'), Symbol('y')))")
+    sT(FiniteSet(x, y), "FiniteSet(Symbol('x'), Symbol('y'))")
+    sT(Tuple(x, y), "Tuple(Symbol('x'), Symbol('y'))")
+    sT(S.EmptySet, "EmptySet")
 
 
 def test_Matrix():
