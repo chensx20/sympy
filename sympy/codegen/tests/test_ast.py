@@ -1,4 +1,5 @@
 import math
+from sympy.core.basic import Atom, Basic
 from sympy.core.containers import Tuple
 from sympy.core.numbers import nan, oo, Float, Integer
 from sympy.core.relational import Lt
@@ -278,6 +279,82 @@ def test_String():
     s = String('foo')
     assert str(s) == 'foo'
     assert repr(s) == "String('foo')"
+
+
+def test_String_reconstruction():
+    class Signifier(String):
+        pass
+
+    for cls in (String, QuotedString, Comment, Signifier):
+        for text in ('', 'foobar'):
+            st = cls(text)
+            assert st.args == ()
+            assert st.func(*st.args) is st
+            assert Basic.copy(st) is st
+            assert st.kwargs() == {}
+            assert st.kwargs(exclude=('text',)) == {}
+            applied = []
+            assert st.kwargs(apply=applied.append) == {}
+            assert applied == []
+            assert st.func(**st.kwargs()) is st
+            assert cls(text=text) == st
+            assert cls(st) is st
+            assert str(st) == text
+            assert repr(st) == '%s(%r)' % (cls.__name__, text)
+            assert hash(st) == hash(cls(text))
+            assert {st: x}[cls(text)] == x
+        assert cls('') != cls('foobar')
+        assert len({cls(''), cls('foobar')}) == 2
+
+
+def test_String_validation():
+    for cls in (String, QuotedString, Comment):
+        raises(TypeError, lambda: cls())
+        for text in (1, x, ['foobar']):
+            raises(TypeError, lambda: cls(text))
+            raises(TypeError, lambda: cls(text=text))
+
+
+def test_String_atomic():
+    for cls in (String, QuotedString, Comment):
+        for text in ('', 'foobar'):
+            st = cls(text)
+            other = cls('other')
+            assert isinstance(st, Atom)
+            assert isinstance(st, Token)
+            assert st.is_Atom
+            assert st.atoms() == {st}
+            assert st.free_symbols == set()
+            assert st.doit() is st
+            assert st.matches(cls(text)) == {}
+            assert st.matches(other) is None
+            assert st.xreplace({st: other}) == other
+            assert st.xreplace({x: y}) is st
+            assert st.subs(st, other) == other
+            assert st.subs(x, y) is st
+            assert st.replace(st, other) == other
+
+
+def test_String_enclosing_ast():
+    for text in ('', 'foobar'):
+        name = String(text)
+        fmt = QuotedString(text)
+        comment = Comment(text)
+        call = FunctionCall(name, [x])
+        prnt = Print([call], format_string=fmt)
+        block = CodeBlock(comment, prnt)
+        for expr in (Type(name), call, prnt, block):
+            assert expr.func(*expr.args) == expr
+            assert expr.copy() == expr
+        for expr in (Type(name), call, prnt):
+            assert expr.func(**expr.kwargs()) == expr
+        renamed = FunctionCall('other', [x])
+        expected = CodeBlock(comment, Print([renamed], format_string=fmt))
+        assert block.xreplace({name: String('other')}) == expected
+        assert block.replace(name, String('other')) == expected
+        assert block.subs(x, y) == CodeBlock(
+            comment, Print([FunctionCall(name, [y])], format_string=fmt))
+
 
 def test_Comment():
     c = Comment('foobar')
