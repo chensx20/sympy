@@ -3,7 +3,7 @@ from sympy import (
     powsimp, symbols, sinh, cosh, tanh, coth, sech, csch, Dummy)
 from sympy.simplify.fu import (
     L, TR1, TR10, TR10i, TR11, TR12, TR12i, TR13, TR14, TR15, TR16,
-    TR111, TR2, TR2i, TR3, TR5, TR6, TR7, TR8, TR9, TRmorrie, _TR56 as T,
+    TR111, TR2, TR2i, TR22, TR3, TR5, TR6, TR7, TR8, TR9, TRmorrie, _TR56 as T,
     TRpower, hyper_as_trig, fu, process_common_addends, trig_split,
     as_f_sign_1)
 from sympy.utilities.randtest import verify_numerically
@@ -75,6 +75,29 @@ def test__TR56():
     assert T(sin(x)**6, sin, cos, h, 6, False) == (-cos(x)**2 + 1)**3
     assert T(sin(x)**6, sin, cos, h, 6, True) == sin(x)**6
     assert T(sin(x)**8, sin, cos, h, 10, True) == (-cos(x)**2 + 1)**4
+    for exponent in (I, 1 + 2*I, y, Symbol('z', complex=True)):
+        expr = sin(x)**exponent
+        for pow in (False, True):
+            assert T(expr, sin, cos, h, 4, pow) == expr
+
+
+def test_nonreal_exponents():
+    for rule, func in ((TR5, sin), (TR6, cos), (TR15, sin),
+                       (TR16, cos), (TR22, tan), (TR22, cot)):
+        for exponent in (I, 1 + 2*I, y):
+            expr = func(x)**exponent
+            for pow in (False, True):
+                assert rule(expr, pow=pow) == expr
+
+
+def test_nonreal_exponents_integration():
+    from sympy import trigsimp
+    from sympy.simplify.trigsimp import futrig
+
+    for simplify in (trigsimp, futrig, fu):
+        for exponent in (I, 1 + 2*I):
+            expr = cos(x)**exponent
+            assert simplify(expr) == expr
 
 
 def test_TR5():
