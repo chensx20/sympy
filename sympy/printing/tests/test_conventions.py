@@ -32,6 +32,44 @@ def test_super_sub():
     assert split_super_sub("") == ("", [], [])
 
 
+def test_super_sub_unicode_digits():
+    for name, base, digits in [
+        ('\u03c90', '\u03c9', '0'),
+        ('\u03a912', '\u03a9', '12'),
+        ('\u03b112', '\u03b1', '12'),
+        ('\u03b2001', '\u03b2', '001'),
+        ('x\u03c912', 'x\u03c9', '12'),
+        ('\xe9\u03c912', '\xe9\u03c9', '12'),
+        ('x12', 'x', '12'),
+        ('omega0', 'omega', '0'),
+    ]:
+        assert split_super_sub(name) == (base, [], [digits])
+        assert split_super_sub(base + '_' + digits) == (base, [], [digits])
+        assert split_super_sub(name + '_a^b_c__d') == (
+            base, ['b', 'd'], [digits, 'a', 'c'])
+        assert split_super_sub(name + '__b_a^d_c') == (
+            base, ['b', 'd'], [digits, 'a', 'c'])
+
+
+def test_super_sub_implicit_digits_boundaries():
+    for name in ['', '0', '001', 'x1y2', '\u03c91x2', 'x.2',
+                 '\u03c9-12', '\u03c9 12', ' 12', '\u03c9',
+                 '\u03c9\u2080', '\u03c9\u0660', '\u03c9\uff10',
+                 '\u03c9\u06600', '\xb2x0', '\u03c9\u03010']:
+        assert split_super_sub(name) == (name, [], [])
+
+
+def test_super_sub_implicit_digits_trailing_newline():
+    for prefix in ['\u03c90', '\u03b2001', 'x\u03c912']:
+        name = prefix + chr(10)
+        assert split_super_sub(name) == (name, [], [])
+        assert split_super_sub(name + '_a^b') == (name, ['b'], ['a'])
+
+    # Preserve the historical ASCII-name treatment of a final newline.
+    assert split_super_sub('x0' + chr(10)) == ('x', [], ['0'])
+    assert split_super_sub('omega001' + chr(10)) == ('omega', [], ['001'])
+
+
 def test_requires_partial():
     x, y, z, t, nu = symbols('x y z t nu')
     n = symbols('n', integer=True)

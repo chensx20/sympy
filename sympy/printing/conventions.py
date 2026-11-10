@@ -7,7 +7,7 @@ import re
 from collections.abc import Iterable
 from sympy import Derivative
 
-_name_with_digits_p = re.compile(r'^([a-zA-Z]+)([0-9]+)$')
+_name_with_digits_p = re.compile(r'^(.+?)([0-9]+)$')
 
 
 def split_super_sub(text):
@@ -60,10 +60,12 @@ def split_super_sub(text):
         else:
             raise RuntimeError("This should never happen.")
 
-    # make a little exception when a name ends with digits, i.e. treat them
-    # as a subscript too.
+    # Treat trailing ASCII digits as a subscript of an alphabetic name.
     m = _name_with_digits_p.match(name)
-    if m:
+    # The historical ASCII pattern also accepts a final newline. Do not
+    # extend that behavior to Unicode names, which must match in full.
+    if m and m.group(1).isalpha() and (
+            m.end() == len(name) or all(ord(c) < 128 for c in m.group(1))):
         name, sub = m.groups()
         subs.insert(0, sub)
 

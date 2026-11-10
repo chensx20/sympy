@@ -291,6 +291,55 @@ def test_upretty_sub_super():
     assert upretty( Symbol("F^1^2^3^4") ) == 'F¹ ² ³ ⁴'
 
 
+def test_upretty_unicode_implicit_subscripts():
+    for name, expected in [('ω0', 'ω₀'), ('Ω12', 'Ω₁₂'),
+                           ('α12', 'α₁₂'), ('β001', 'β₀₀₁'),
+                           ('xω12', 'xω₁₂'), ('éω12', 'éω₁₂')]:
+        symbol = Symbol(name)
+        assert upretty(symbol) == expected
+        assert pretty(symbol) == name
+        assert symbol.name == name
+        assert symbol == Symbol(name)
+
+    assert upretty(Symbol('ω0_2^3')) == 'ω³₀ ₂'
+    assert upretty(Symbol('ω0__3_2')) == 'ω³₀ ₂'
+    assert upretty(Symbol('ω0_bad')) == 'ω_0_bad'
+    assert pretty(Symbol('ω0_2^3')) == 'ω0_2^3'
+    assert Symbol('ω0') != Symbol('ω_0')
+
+
+def test_upretty_unicode_implicit_subscripts_boundaries():
+    for name in ['ω₀', 'ω1x2', 'x1y2', 'ω-12', 'ω 12',
+                 'ω٠', 'ω０', 'ώ0']:
+        assert upretty(Symbol(name)) == name
+        assert pretty(Symbol(name)) == name
+
+
+def test_upretty_implicit_subscripts_trailing_newline():
+    for prefix in ['ω0', 'β001', 'xω12']:
+        name = prefix + chr(10)
+        symbol = Symbol(name)
+        assert upretty(symbol) == prefix
+        assert pretty(symbol) == prefix
+        assert symbol.name == name
+
+    assert upretty(Symbol('x0' + chr(10))) == 'x₀'
+    assert upretty(Symbol('omega001' + chr(10))) == 'ω₀₀₁'
+
+
+def test_upretty_unicode_implicit_subscripts_matrix():
+    t0, t1, t2 = symbols('t0:3')
+    omega = Symbol('ω0')
+    matrix = Matrix([[-t0*omega, -t1*omega, -t2*omega]])
+    entries = tuple(matrix)
+    arguments = tuple(entry.args for entry in entries)
+    assert upretty(matrix) == '[-t₀⋅ω₀  -t₁⋅ω₀  -t₂⋅ω₀]'
+    assert pretty(matrix) == '[-t0*ω0  -t1*ω0  -t2*ω0]'
+    assert tuple(matrix) == entries
+    assert tuple(entry.args for entry in matrix) == arguments
+    assert omega.name == 'ω0'
+
+
 def test_upretty_subs_missing_in_24():
     assert upretty( Symbol('F_beta') ) == 'Fᵦ'
     assert upretty( Symbol('F_gamma') ) == 'Fᵧ'
