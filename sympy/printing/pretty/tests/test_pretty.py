@@ -315,6 +315,18 @@ def test_upretty_unicode_implicit_subscripts_boundaries():
         assert pretty(Symbol(name)) == name
 
 
+def test_upretty_implicit_subscripts_trailing_newline():
+    for prefix in ['ω0', 'β001', 'xω12']:
+        name = prefix + chr(10)
+        symbol = Symbol(name)
+        assert upretty(symbol) == prefix
+        assert pretty(symbol) == prefix
+        assert symbol.name == name
+
+    assert upretty(Symbol('x0' + chr(10))) == 'x₀'
+    assert upretty(Symbol('omega001' + chr(10))) == 'ω₀₀₁'
+
+
 def test_upretty_unicode_implicit_subscripts_matrix():
     t0, t1, t2 = symbols('t0:3')
     omega = Symbol('ω0')

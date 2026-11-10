@@ -59,6 +59,17 @@ def test_super_sub_implicit_digits_boundaries():
         assert split_super_sub(name) == (name, [], [])
 
 
+def test_super_sub_implicit_digits_trailing_newline():
+    for prefix in ['\u03c90', '\u03b2001', 'x\u03c912']:
+        name = prefix + chr(10)
+        assert split_super_sub(name) == (name, [], [])
+        assert split_super_sub(name + '_a^b') == (name, ['b'], ['a'])
+
+    # Preserve the historical ASCII-name treatment of a final newline.
+    assert split_super_sub('x0' + chr(10)) == ('x', [], ['0'])
+    assert split_super_sub('omega001' + chr(10)) == ('omega', [], ['001'])
+
+
 def test_requires_partial():
     x, y, z, t, nu = symbols('x y z t nu')
     n = symbols('n', integer=True)

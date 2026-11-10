@@ -62,7 +62,10 @@ def split_super_sub(text):
 
     # Treat trailing ASCII digits as a subscript of an alphabetic name.
     m = _name_with_digits_p.match(name)
-    if m and m.group(1).isalpha():
+    # The historical ASCII pattern also accepts a final newline. Do not
+    # extend that behavior to Unicode names, which must match in full.
+    if m and m.group(1).isalpha() and (
+            m.end() == len(name) or all(ord(c) < 128 for c in m.group(1))):
         name, sub = m.groups()
         subs.insert(0, sub)
 
