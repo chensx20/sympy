@@ -85,7 +85,7 @@ def test_Min():
     assert Min(p, p_).func is Min
 
     # lists
-    raises(ValueError, lambda: Min())
+    assert Min() is S.Infinity
     assert Min(x, y) == Min(y, x)
     assert Min(x, y, z) == Min(z, y, x)
     assert Min(x, Min(y, z)) == Min(z, y, x)
@@ -156,7 +156,7 @@ def test_Max():
 
     # lists
 
-    raises(ValueError, lambda: Max())
+    assert Max() is S.NegativeInfinity
     assert Max(x, y) == Max(y, x)
     assert Max(x, y, z) == Max(z, y, x)
     assert Max(x, Max(y, z)) == Max(z, y, x)
@@ -207,6 +207,28 @@ def test_Max():
     assert m.is_positive is None
     assert m.is_nonnegative is True
     assert m.is_negative is False
+
+
+def test_minmax_empty():
+    x = Symbol('x', real=True)
+    for func, identity in [(Min, S.Infinity), (Max, S.NegativeInfinity)]:
+        assert func() is identity
+        assert func(*[]) is identity
+        assert func(*()) is identity
+        assert func(*(arg for arg in [])) is identity
+        assert func(evaluate=False) is identity
+        assert func(identity) is identity
+        assert func(identity, identity) is identity
+        assert func(identity, evaluate=False) is identity
+        assert func(x, identity) == x
+        assert func(identity, x) == x
+        assert func(x, identity, evaluate=False) == x
+        assert func(func(), func()) is identity
+        assert func(x, func()) == x
+        assert func(func(), x) == x
+        assert func(x, func(), evaluate=False) == x
+    assert Min(x, Max()) is S.NegativeInfinity
+    assert Max(x, Min()) is S.Infinity
 
 
 def test_minmax_assumptions():
