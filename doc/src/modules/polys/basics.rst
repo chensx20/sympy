@@ -531,12 +531,14 @@ Square-free factorization
 -------------------------
 
 The square-free factorization of a univariate polynomial is the product of all
-factors (not necessarily irreducible) of degree 1, 2 etc.::
+square-free factors (not necessarily irreducible), grouped by multiplicity.
+Each multiplicity occurs only once in the list returned by ``sqf_list``::
 
     >>> f = 2*x**2 + 5*x**3 + 4*x**4 + x**5
 
     >>> sqf_list(f)
-    (1, [(x + 2, 1), (x, 2), (x + 1, 2)])
+                       2
+    (1, [(x + 2, 1), (x  + x, 2)])
 
     >>> sqf(f)
      2        2

@@ -2331,6 +2331,80 @@ def test_sqf():
     assert sqf_list(f) == (1, [(x + 1, 40000000000)])
 
 
+def test_sqf_list_group_multiplicities():
+    f = (x**2 + 1)*(x - 1)**2*(x - 2)**3*(x - 3)**3
+    expected = (1, [(x**2 + 1, 1), (x - 1, 2),
+                    (x**2 - 5*x + 6, 3)])
+    for expr in (f, expand(f)):
+        assert sqf_list(expr) == expected
+        assert sqf_list(expr, x) == expected
+        assert sqf_list(expr, (x,)) == expected
+        assert sqf_list(expr, polys=False) == expected
+        assert sqf_list(Poly(expr, x), polys=False) == expected
+        poly_expected = (1, [(Poly(base, x), k) for base, k in expected[1]])
+        assert sqf_list(expr, polys=True) == poly_expected
+        assert sqf_list(Poly(expr, x)) == poly_expected
+
+        coeff, factors = sqf_list(expr)
+        multiplicities = [k for _, k in factors]
+        assert multiplicities == sorted(set(multiplicities))
+        assert expand(coeff*Mul(*[base**k for base, k in factors]) - expr) == 0
+
+    assert sqf_list(x**5 - 2*x**4 - 2*x**3 + 4*x**2 + x - 2) == \
+        (1, [(x - 2, 1), (x**2 - 1, 2)])
+    assert sqf_list((x**2 - 1)**2*(x - 2)**2) == \
+        (1, [(x**3 - 2*x**2 - x + 2, 2)])
+    assert sqf_list((x**2 - 1)**2*(x - 1)**3) == \
+        (1, [(x**2 - 1, 2), (x - 1, 3)])
+    assert sqf_list((x**2 + 2*x + 1)**20000000000*
+                    (x - 1)**40000000000) == \
+        (1, [(x**2 - 1, 40000000000)])
+    assert sqf_list(x*(x + 1)) == (1, [(x**2 + x, 1)])
+    assert sqf_list(x*(x + y)) == (1, [(x**2 + x*y, 1)])
+    assert sqf_list((y + x)*(y + 2*x), y, x, polys=True) == \
+        (1, [(Poly(y**2 + 3*x*y + 2*x**2, y, x), 1)])
+    assert sqf_list(-Rational(2, 3)*(2*x - 2)**2*(x + 1)**2) == \
+        (-Rational(8, 3), [(x**2 - 1, 2)])
+    assert sqf_list(0) == (0, [])
+    assert sqf_list(-Rational(2, 3)) == (-Rational(2, 3), [])
+
+    assert factor_list(f) == \
+        (1, [(x - 1, 2), (x - 3, 3), (x - 2, 3), (x**2 + 1, 1)])
+    assert sqf(f) == f
+
+
+def test_sqf_list_group_domains():
+    for domain in (ZZ, QQ, RR, EX):
+        f = (x - 1)*(x + 1)
+        assert sqf_list(f, x, domain=domain, polys=True) == \
+            (1, [(Poly(x**2 - 1, x, domain=domain), 1)])
+
+    assert sqf_list((x - 1)*(x + 1), x, modulus=5, polys=True) == \
+        (1, [(Poly(x**2 - 1, x, modulus=5), 1)])
+    assert sqf_list((x - sqrt(2))*(x + sqrt(2)), x,
+                    extension=sqrt(2), polys=True) == \
+        (1, [(Poly(x**2 - 2, x, extension=sqrt(2)), 1)])
+    assert sqf_list(x*(x + y), x, polys=True) == \
+        (1, [(Poly(x**2 + x*y, x, domain='ZZ[y]'), 1)])
+
+
+def test_sqf_list_group_frac():
+    numer = (x**2 - 1)*(x - 2)
+    denom = (x + 1)*(x + 3)
+    f = -Rational(2, 3)*numer/denom
+    expected = (-Rational(2, 3), [(x**3 - 2*x**2 - x + 2, 1)],
+                [(x**2 + 4*x + 3, 1)])
+    assert sqf_list(f, frac=True) == expected
+    assert sqf_list(f, x, frac=True, polys=False) == expected
+    assert sqf_list(f, x, frac=True, polys=True) == \
+        (expected[0], [(Poly(base, x), k) for base, k in expected[1]],
+         [(Poly(base, x), k) for base, k in expected[2]])
+    coeff, fp, fq = sqf_list(f, frac=True)
+    assert expand(coeff*Mul(*[base**k for base, k in fp])*denom -
+                  Mul(*[base**k for base, k in fq])*(-Rational(2, 3))*numer) == 0
+    raises(PolynomialError, lambda: sqf_list(f))
+
+
 def test_factor():
     f = x**5 - x**3 - x**2 + 1
 
@@ -3273,7 +3347,7 @@ def test_to_rational_coeffs():
 def test_factor_terms():
     # issue 7067
     assert factor_list(x*(x + y)) == (1, [(x, 1), (x + y, 1)])
-    assert sqf_list(x*(x + y)) == (1, [(x, 1), (x + y, 1)])
+    assert sqf_list(x*(x + y)) == (1, [(x**2 + x*y, 1)])
 
 
 def test_as_list():
