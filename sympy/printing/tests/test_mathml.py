@@ -735,104 +735,143 @@ def test_presentation_symbol():
     del mml
 
     mml = mpp._print(Symbol("x^2"))
-    assert mml.nodeName == 'mi'
-    assert mml.childNodes[0].nodeName == 'msup'
-    assert mml.childNodes[0].childNodes[0].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[0].childNodes[0].nodeValue == 'x'
-    assert mml.childNodes[0].childNodes[1].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[1].childNodes[0].nodeValue == '2'
+    assert mml.nodeName == 'msup'
+    assert mml.childNodes[0].nodeName == 'mi'
+    assert mml.childNodes[0].childNodes[0].nodeValue == 'x'
+    assert mml.childNodes[1].nodeName == 'mi'
+    assert mml.childNodes[1].childNodes[0].nodeValue == '2'
     del mml
 
     mml = mpp._print(Symbol("x__2"))
-    assert mml.nodeName == 'mi'
-    assert mml.childNodes[0].nodeName == 'msup'
-    assert mml.childNodes[0].childNodes[0].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[0].childNodes[0].nodeValue == 'x'
-    assert mml.childNodes[0].childNodes[1].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[1].childNodes[0].nodeValue == '2'
+    assert mml.nodeName == 'msup'
+    assert mml.childNodes[0].nodeName == 'mi'
+    assert mml.childNodes[0].childNodes[0].nodeValue == 'x'
+    assert mml.childNodes[1].nodeName == 'mi'
+    assert mml.childNodes[1].childNodes[0].nodeValue == '2'
     del mml
 
     mml = mpp._print(Symbol("x_2"))
-    assert mml.nodeName == 'mi'
-    assert mml.childNodes[0].nodeName == 'msub'
-    assert mml.childNodes[0].childNodes[0].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[0].childNodes[0].nodeValue == 'x'
-    assert mml.childNodes[0].childNodes[1].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[1].childNodes[0].nodeValue == '2'
+    assert mml.nodeName == 'msub'
+    assert mml.childNodes[0].nodeName == 'mi'
+    assert mml.childNodes[0].childNodes[0].nodeValue == 'x'
+    assert mml.childNodes[1].nodeName == 'mi'
+    assert mml.childNodes[1].childNodes[0].nodeValue == '2'
     del mml
 
     mml = mpp._print(Symbol("x^3_2"))
-    assert mml.nodeName == 'mi'
-    assert mml.childNodes[0].nodeName == 'msubsup'
-    assert mml.childNodes[0].childNodes[0].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[0].childNodes[0].nodeValue == 'x'
-    assert mml.childNodes[0].childNodes[1].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[1].childNodes[0].nodeValue == '2'
-    assert mml.childNodes[0].childNodes[2].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[2].childNodes[0].nodeValue == '3'
+    assert mml.nodeName == 'msubsup'
+    assert mml.childNodes[0].nodeName == 'mi'
+    assert mml.childNodes[0].childNodes[0].nodeValue == 'x'
+    assert mml.childNodes[1].nodeName == 'mi'
+    assert mml.childNodes[1].childNodes[0].nodeValue == '2'
+    assert mml.childNodes[2].nodeName == 'mi'
+    assert mml.childNodes[2].childNodes[0].nodeValue == '3'
     del mml
 
     mml = mpp._print(Symbol("x__3_2"))
-    assert mml.nodeName == 'mi'
-    assert mml.childNodes[0].nodeName == 'msubsup'
-    assert mml.childNodes[0].childNodes[0].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[0].childNodes[0].nodeValue == 'x'
-    assert mml.childNodes[0].childNodes[1].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[1].childNodes[0].nodeValue == '2'
-    assert mml.childNodes[0].childNodes[2].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[2].childNodes[0].nodeValue == '3'
+    assert mml.nodeName == 'msubsup'
+    assert mml.childNodes[0].nodeName == 'mi'
+    assert mml.childNodes[0].childNodes[0].nodeValue == 'x'
+    assert mml.childNodes[1].nodeName == 'mi'
+    assert mml.childNodes[1].childNodes[0].nodeValue == '2'
+    assert mml.childNodes[2].nodeName == 'mi'
+    assert mml.childNodes[2].childNodes[0].nodeValue == '3'
     del mml
 
     mml = mpp._print(Symbol("x_2_a"))
-    assert mml.nodeName == 'mi'
-    assert mml.childNodes[0].nodeName == 'msub'
-    assert mml.childNodes[0].childNodes[0].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[0].childNodes[0].nodeValue == 'x'
-    assert mml.childNodes[0].childNodes[1].nodeName == 'mrow'
-    assert mml.childNodes[0].childNodes[1].childNodes[0].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[1].childNodes[0].childNodes[
+    assert mml.nodeName == 'msub'
+    assert mml.childNodes[0].nodeName == 'mi'
+    assert mml.childNodes[0].childNodes[0].nodeValue == 'x'
+    assert mml.childNodes[1].nodeName == 'mrow'
+    assert mml.childNodes[1].childNodes[0].nodeName == 'mi'
+    assert mml.childNodes[1].childNodes[0].childNodes[
         0].nodeValue == '2'
-    assert mml.childNodes[0].childNodes[1].childNodes[1].nodeName == 'mo'
-    assert mml.childNodes[0].childNodes[1].childNodes[1].childNodes[
+    assert mml.childNodes[1].childNodes[1].nodeName == 'mo'
+    assert mml.childNodes[1].childNodes[1].childNodes[
         0].nodeValue == ' '
-    assert mml.childNodes[0].childNodes[1].childNodes[2].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[1].childNodes[2].childNodes[
+    assert mml.childNodes[1].childNodes[2].nodeName == 'mi'
+    assert mml.childNodes[1].childNodes[2].childNodes[
         0].nodeValue == 'a'
     del mml
 
     mml = mpp._print(Symbol("x^2^a"))
-    assert mml.nodeName == 'mi'
-    assert mml.childNodes[0].nodeName == 'msup'
-    assert mml.childNodes[0].childNodes[0].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[0].childNodes[0].nodeValue == 'x'
-    assert mml.childNodes[0].childNodes[1].nodeName == 'mrow'
-    assert mml.childNodes[0].childNodes[1].childNodes[0].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[1].childNodes[0].childNodes[
+    assert mml.nodeName == 'msup'
+    assert mml.childNodes[0].nodeName == 'mi'
+    assert mml.childNodes[0].childNodes[0].nodeValue == 'x'
+    assert mml.childNodes[1].nodeName == 'mrow'
+    assert mml.childNodes[1].childNodes[0].nodeName == 'mi'
+    assert mml.childNodes[1].childNodes[0].childNodes[
         0].nodeValue == '2'
-    assert mml.childNodes[0].childNodes[1].childNodes[1].nodeName == 'mo'
-    assert mml.childNodes[0].childNodes[1].childNodes[1].childNodes[
+    assert mml.childNodes[1].childNodes[1].nodeName == 'mo'
+    assert mml.childNodes[1].childNodes[1].childNodes[
         0].nodeValue == ' '
-    assert mml.childNodes[0].childNodes[1].childNodes[2].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[1].childNodes[2].childNodes[
+    assert mml.childNodes[1].childNodes[2].nodeName == 'mi'
+    assert mml.childNodes[1].childNodes[2].childNodes[
         0].nodeValue == 'a'
     del mml
 
     mml = mpp._print(Symbol("x__2__a"))
-    assert mml.nodeName == 'mi'
-    assert mml.childNodes[0].nodeName == 'msup'
-    assert mml.childNodes[0].childNodes[0].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[0].childNodes[0].nodeValue == 'x'
-    assert mml.childNodes[0].childNodes[1].nodeName == 'mrow'
-    assert mml.childNodes[0].childNodes[1].childNodes[0].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[1].childNodes[0].childNodes[
+    assert mml.nodeName == 'msup'
+    assert mml.childNodes[0].nodeName == 'mi'
+    assert mml.childNodes[0].childNodes[0].nodeValue == 'x'
+    assert mml.childNodes[1].nodeName == 'mrow'
+    assert mml.childNodes[1].childNodes[0].nodeName == 'mi'
+    assert mml.childNodes[1].childNodes[0].childNodes[
         0].nodeValue == '2'
-    assert mml.childNodes[0].childNodes[1].childNodes[1].nodeName == 'mo'
-    assert mml.childNodes[0].childNodes[1].childNodes[1].childNodes[
+    assert mml.childNodes[1].childNodes[1].nodeName == 'mo'
+    assert mml.childNodes[1].childNodes[1].childNodes[
         0].nodeValue == ' '
-    assert mml.childNodes[0].childNodes[1].childNodes[2].nodeName == 'mi'
-    assert mml.childNodes[0].childNodes[1].childNodes[2].childNodes[
+    assert mml.childNodes[1].childNodes[2].nodeName == 'mi'
+    assert mml.childNodes[1].childNodes[2].childNodes[
         0].nodeValue == 'a'
     del mml
+
+
+def test_presentation_symbol_trailing_digits():
+    for name, base, sub in [('x2', 'x', '2'), ('x12', 'x', '12'),
+                            ('x_2', 'x', '2'),
+                            ('alpha2', u'\N{GREEK SMALL LETTER ALPHA}', '2')]:
+        mml = mpp._print(Symbol(name))
+        assert mml.nodeName == 'msub'
+        assert len(mml.childNodes) == 2
+        assert mml.childNodes[0].nodeName == 'mi'
+        assert mml.childNodes[0].childNodes[0].nodeValue == base
+        assert mml.childNodes[1].nodeName == 'mi'
+        assert mml.childNodes[1].childNodes[0].nodeValue == sub
+
+    assert mpp.doprint(Symbol('x_2_a^3^b')) == (
+        '<msubsup><mi>x</mi><mrow><mi>2</mi><mo> </mo><mi>a</mi></mrow>'
+        '<mrow><mi>3</mi><mo> </mo><mi>b</mi></mrow></msubsup>')
+    assert mpp.doprint(Symbol('alpha_beta^gamma')) == (
+        '<msubsup><mi>&#945;</mi><mi>&#946;</mi><mi>&#947;</mi></msubsup>')
+
+
+def test_presentation_symbol_compound():
+    x2 = Symbol('x2')
+    mml = mpp._print(x2*Symbol('z') + x2**3)
+    assert mml.nodeName == 'mrow'
+    scripts = mml.getElementsByTagName('msub')
+    assert len(scripts) == 2
+    for script in scripts:
+        assert len(script.childNodes) == 2
+        assert script.childNodes[0].nodeName == 'mi'
+        assert script.childNodes[0].childNodes[0].nodeValue == 'x'
+        assert script.childNodes[1].nodeName == 'mi'
+        assert script.childNodes[1].childNodes[0].nodeValue == '2'
+    for identifier in mml.getElementsByTagName('mi'):
+        for tag in ['msub', 'msup', 'msubsup']:
+            assert not identifier.getElementsByTagName(tag)
+
+
+def test_content_symbol_scripts():
+    for name, tag, scripts in [
+            ('x2', 'msub', ['2']), ('x12', 'msub', ['12']),
+            ('x_2', 'msub', ['2']), ('x^2', 'msup', ['2']),
+            ('x__2', 'msup', ['2']), ('x^3_2', 'msubsup', ['2', '3'])]:
+        assert mp.doprint(Symbol(name)) == (
+            '<ci><mml:%s><mml:mi>x</mml:mi>%s</mml:%s></ci>' %
+            (tag, ''.join('<mml:mi>%s</mml:mi>' % script
+                          for script in scripts), tag))
 
 
 def test_presentation_mathml_greek():
@@ -962,3 +1001,25 @@ def test_print_random_symbol():
     R = RandomSymbol(Symbol('R'))
     assert mpp.doprint(R) == '<mi>R</mi>'
     assert mp.doprint(R) == '<ci>R</ci>'
+
+    R = RandomSymbol(Symbol('x2'))
+    assert mpp.doprint(R) == '<msub><mi>x</mi><mi>2</mi></msub>'
+    assert mp.doprint(R) == (
+        '<ci><mml:msub><mml:mi>x</mml:mi><mml:mi>2</mml:mi></mml:msub></ci>')
+
+
+def test_print_scripted_matrix_symbol():
+    for name, tag, scripts in [
+            ('A2', 'msub', ['2']), ('A^2', 'msup', ['2']),
+            ('A^3_2', 'msubsup', ['2', '3'])]:
+        A = MatrixSymbol(name, 1, 2)
+        for style in ['plain', 'bold']:
+            variant = ' mathvariant="bold"' if style == 'bold' else ''
+            assert mathml(A, printer='presentation', mat_symbol_style=style) == (
+                '<%s><mi%s>A</mi>%s</%s>' %
+                (tag, variant, ''.join('<mi>%s</mi>' % script
+                                      for script in scripts), tag))
+            assert mathml(A, mat_symbol_style=style) == (
+                '<ci><mml:%s><mml:mi>A</mml:mi>%s</mml:%s></ci>' %
+                (tag, ''.join('<mml:mi>%s</mml:mi>' % script
+                              for script in scripts), tag))
