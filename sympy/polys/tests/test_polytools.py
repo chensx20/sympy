@@ -645,6 +645,12 @@ def test_Poly_add():
     assert Poly(x, x) + 1 == Poly(x + 1, x)
     assert 1 + Poly(x, x) == Poly(x + 1, x)
 
+    f = x + Poly(x, x)
+    assert type(f) is Poly
+    assert f == Poly(2*x, x)
+    assert f.gens == (x,)
+    assert f.domain == ZZ
+
 
 def test_Poly_sub():
     assert Poly(0, x).sub(Poly(0, x)) == Poly(0, x)
@@ -661,6 +667,12 @@ def test_Poly_sub():
     assert Poly(x, x) - 1 == Poly(x - 1, x)
     assert 1 - Poly(x, x) == Poly(1 - x, x)
 
+    f = x - Poly(x, x)
+    assert type(f) is Poly
+    assert f == Poly(0, x)
+    assert f.gens == (x,)
+    assert f.domain == ZZ
+
 
 def test_Poly_mul():
     assert Poly(0, x).mul(Poly(0, x)) == Poly(0, x)
@@ -676,6 +688,37 @@ def test_Poly_mul():
 
     assert Poly(x, x) * 2 == Poly(2*x, x)
     assert 2 * Poly(x, x) == Poly(2*x, x)
+
+    for coeff in (x, -2, S(-2), S(2), S.NegativeOne, S.One, S.Zero,
+                  Rational(1, 2)):
+        domain = QQ if coeff == Rational(1, 2) else ZZ
+        for f in (coeff * Poly(x, x), Poly(x, x) * coeff):
+            assert type(f) is Poly
+            assert f == Poly(coeff*x, x, domain=domain)
+            assert f.gens == (x,)
+            assert f.domain == domain
+
+    for f in (x * Poly(x + y, y, x), Poly(x + y, y, x) * x):
+        assert type(f) is Poly
+        assert f == Poly(x**2 + x*y, y, x)
+        assert f.gens == (y, x)
+        assert f.domain == ZZ
+
+    for f in (x * Poly(x, x, domain=QQ), Poly(x, x, domain=QQ) * x):
+        assert type(f) is Poly
+        assert f == Poly(x**2, x, domain=QQ)
+        assert f.gens == (x,)
+        assert f.domain == QQ
+
+    for f in (sin(x) * Poly(x, x), Poly(x, x) * sin(x)):
+        assert f == x*sin(x)
+        assert not isinstance(f, Poly)
+
+    f = x * PurePoly(x, x)
+    assert type(f) is PurePoly
+    assert f == PurePoly(x**2, x)
+    assert f.gens == (x,)
+    assert f.domain == ZZ
 
 
 def test_Poly_sqr():
@@ -3195,7 +3238,6 @@ def test_keep_coeff():
     assert _keep_coeff(x + 1, S(2)) == u
 
 
-@XFAIL
 def test_poly_matching_consistency():
     # Test for this issue:
     # https://github.com/sympy/sympy/issues/5514

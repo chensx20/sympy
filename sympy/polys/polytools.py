@@ -107,6 +107,9 @@ class Poly(Expr):
     is_commutative = True
     is_Poly = True
 
+    # Let polynomial arithmetic handle operations with ordinary expressions.
+    _op_priority = 10.001
+
     def __new__(cls, rep, *gens, **args):
         """Create a new polynomial instance out of something useful. """
         opt = options.build_options(gens, args)
