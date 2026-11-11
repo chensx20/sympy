@@ -335,6 +335,7 @@ def test_args():
     assert Permutation([[0], [1]]) == Permutation(((0, ), (1, ))) == \
         Permutation(((0, ), [1]))
     assert Permutation([[1, 2]]) == Permutation([0, 2, 1])
+    assert Permutation([[1], [1, 2]]) == Permutation([0, 2, 1])
     assert Permutation([[1], [4, 2]]) == Permutation([0, 1, 4, 3, 2])
     assert Permutation([[1], [4, 2]], size=1) == Permutation([0, 1, 4, 3, 2])
     assert Permutation(
@@ -349,10 +350,45 @@ def test_args():
     raises(ValueError, lambda: Permutation([[1, 2], 0]))
            # enclosing brackets needed on 0
     raises(ValueError, lambda: Permutation([1, 1, 0]))
-    raises(ValueError, lambda: Permutation([[1], [1, 2]]))
+    raises(ValueError, lambda: Permutation([[0, 1, 0]]))
+    raises(ValueError, lambda: Permutation([[2, 3], [0, 1, 0]]))
+    raises(ValueError, lambda: Permutation([[-1, 0]]))
     raises(ValueError, lambda: Permutation([4, 5], size=10))  # where are 0-3?
     # but this is ok because cycles imply that only those listed moved
     assert Permutation(4, 5) == Permutation([0, 1, 2, 3, 5, 4])
+
+
+def test_args_overlapping_cycles():
+    cases = [
+        ([[0, 1], [0, 1]], [0, 1]),
+        ([[0, 1], [1, 2]], [2, 0, 1]),
+        ([[1, 2], [0, 1]], [1, 2, 0]),
+        ([[0, 1], [1, 2], [2, 3]], [3, 0, 1, 2]),
+        ([[1], [1, 2]], [0, 2, 1]),
+        ([[3, 4], [3, 4]], [0, 1, 2, 3, 4]),
+        ([[0, 1], [0, 1], [4]], [0, 1, 2, 3, 4]),
+    ]
+    for cycles, expected in cases:
+        original = [cycle[:] for cycle in cycles]
+        p = Permutation(cycles)
+        assert p.array_form == expected
+        assert p.size == len(expected)
+        assert p._cyclic_form is None
+        assert cycles == original
+        assert Permutation(tuple(tuple(c) for c in cycles)) == p
+
+        product = Permutation(size=p.size)
+        composed = Cycle()
+        for cycle in cycles:
+            product = product * Permutation([cycle], size=p.size)
+            composed = composed(*cycle)
+        assert p == product
+        assert p.array_form == composed.list()
+
+    for size, expected in [(4, [0, 1, 2, 3]), (1, [0, 1])]:
+        p = Permutation([[0, 1], [0, 1]], size=size)
+        assert p.array_form == expected
+        assert p.size == len(expected)
 
 
 def test_Cycle():

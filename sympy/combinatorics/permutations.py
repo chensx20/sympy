@@ -314,7 +314,7 @@ class Cycle(dict):
             yield i
 
     def __call__(self, *other):
-        """Return product of cycles processed from R to L.
+        """Return product of cycles processed from L to R.
 
         Examples
         ========
@@ -801,8 +801,9 @@ class Permutation(Basic):
     def __new__(cls, *args, **kwargs):
         """
         Constructor for the Permutation object from a list or a
-        list of lists in which all elements of the permutation may
-        appear only once.
+        list of lists. In array form, each element must appear exactly
+        once. In cyclic form, elements may occur in different cycles,
+        but must not be repeated within a single cycle.
 
         Examples
         ========
@@ -823,6 +824,15 @@ class Permutation(Basic):
         Permutation([1, 0, 2, 3, 5, 6, 4])
         >>> Permutation([[4, 5, 6], [0, 1], [19]])
         Permutation([1, 0, 2, 3, 5, 6, 4], size=20)
+
+        Non-disjoint cycles are applied from left to right:
+
+        >>> Permutation([[0, 1], [1, 2]])
+        Permutation([2, 0, 1])
+        >>> Permutation([[1, 2], [0, 1]])
+        Permutation([1, 2, 0])
+        >>> Permutation([[0, 1], [0, 1]])
+        Permutation([0, 1])
 
         All manipulation of permutations assumes that the smallest element
         is 0 (in keeping with 0-based indexing in Python) so if the 0 is
@@ -895,12 +905,8 @@ class Permutation(Basic):
         # counting starts from 1.
 
         temp = flatten(args)
-        if has_dups(temp):
-            if is_cycle:
-                raise ValueError('there were repeated elements; to resolve '
-                'cycles use Cycle%s.' % ''.join([str(tuple(c)) for c in args]))
-            else:
-                raise ValueError('there were repeated elements.')
+        if not is_cycle and has_dups(temp):
+            raise ValueError('there were repeated elements.')
         temp = set(temp)
 
         if not is_cycle and \
