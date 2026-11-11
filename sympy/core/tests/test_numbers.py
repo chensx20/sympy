@@ -370,6 +370,53 @@ def test_Rational_new():
     assert n.p == -2
 
 
+def test_Rational_new_two_arguments():
+    for numerator in ('0.5', 0.5, S.Half, Float(0.5)):
+        for denominator in ('100', 100, Integer(100), 100.0, Float(100)):
+            assert Rational(numerator, denominator) == Rational(1, 200)
+
+    assert Rational('1/2', '1/3') == Rational(3, 2)
+    assert Rational('0.5', '0.2') == Rational(5, 2)
+    assert Rational('0.5', '-100') == Rational(-1, 200)
+    assert Rational('1e-2', '1e2') == Rational(1, 10000)
+    assert Rational('2', '4') is S.Half
+    assert Rational('4', '2') == Integer(2)
+    assert Rational('0.5', '0.5') is S.One
+    unreduced = Rational('2/3', '4/5', gcd=1)
+    assert unreduced.p == 10
+    assert unreduced.q == 12
+
+
+def test_Rational_new_two_arguments_float_precision():
+    exact_decimal = Rational('0.2', '100')
+    exact_binary = Rational(3602879701896397, 1801439850948198400)
+    assert exact_decimal == Rational(1, 500)
+    assert Rational(0.2, '100') == exact_binary
+    assert Rational(Float(0.2), '100') == exact_binary
+    assert exact_decimal != exact_binary
+    assert Rational('1', 0.2) == Rational(18014398509481984, 3602879701896397)
+
+
+def test_Rational_new_two_arguments_invalid():
+    for invalid in ('invalid', '3**3', '1/2 + 2/3', '1/2/3'):
+        raises(TypeError, lambda: Rational(invalid, '100'))
+        raises(TypeError, lambda: Rational('0.5', invalid))
+
+
+def test_Rational_new_two_arguments_zero():
+    assert Rational('0', '100') is S.Zero
+    assert Rational('0.5', '0') is S.ComplexInfinity
+    assert Rational('-0.5', '0') is S.ComplexInfinity
+    assert Rational('0', '0') is S.NaN
+    seterr(divide=True)
+    try:
+        raises(ValueError, lambda: Rational('0', '0'))
+        assert Rational('0.5', '0') is S.ComplexInfinity
+    finally:
+        seterr(divide=False)
+    assert Rational('0', '0') is S.NaN
+
+
 def test_Number_new():
     """"
     Test for Number constructor
