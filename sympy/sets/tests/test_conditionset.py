@@ -1,7 +1,7 @@
 from sympy.sets import (ConditionSet, Intersection, FiniteSet,
     EmptySet, Union, Contains)
 from sympy import (Symbol, Eq, S, Abs, sin, pi, Interval,
-    And, Mod, oo, Function)
+    And, Mod, oo, Function, Lambda, imageset, asin, Rational)
 from sympy.testing.pytest import raises, XFAIL, warns_deprecated_sympy
 
 
@@ -125,9 +125,54 @@ def test_subs_CondSet():
     assert ConditionSet(
         n, n < x, Interval(0, oo)).subs(x, p) == Interval(0, oo)
     assert ConditionSet(
-        n, n < x, Interval(-oo, 0)).subs(x, p) == S.EmptySet
+        n, n < x, Interval(-oo, 0)).subs(x, p) == Interval(-oo, 0)
     assert ConditionSet(f(x), f(x) < 1, {w, z}
         ).subs(f(x), y) == ConditionSet(y, y < 1, {w, z})
+
+
+def test_subs_CondSet_true_guard_imageset():
+    n = Symbol('n')
+    base = imageset(Lambda(n, 2*n*pi + asin(y)), S.Integers)
+    c = ConditionSet(x, Contains(y, Interval(-1, 1)), base)
+    for value in (Rational(1, 3), S.Zero, S.One, -S.One, S(2)):
+        expected = base.subs(y, value) if value != 2 else S.EmptySet
+        assert c.subs(y, value) == expected
+        assert c.subs(y, value, simultaneous=True) == expected
+        assert c.xreplace({y: value}) == expected
+
+
+def test_subs_CondSet_true_guard_bases():
+    for base in (FiniteSet(0, 1), FiniteSet(2, 3), S.Integers):
+        c = ConditionSet(x, Contains(y, Interval(-1, 1)), base)
+        for value in (Rational(1, 3), S.One, S(2)):
+            expected = base if value != 2 else S.EmptySet
+            assert c.subs(y, value) == expected
+            assert c.subs(y, value, simultaneous=True) == expected
+            assert c.xreplace({y: value}) == expected
+
+
+def test_subs_CondSet_symbolic_true_guard():
+    p = Symbol('p', positive=True)
+    for condition, value in ((Eq(y, z), z), (y > 0, p)):
+        c = ConditionSet(x, condition, S.Integers)
+        assert c.subs(y, value) == S.Integers
+        assert c.subs(y, value, simultaneous=True) == S.Integers
+        assert c.xreplace({y: value}) == S.Integers
+
+
+def test_subs_CondSet_unknown_guard():
+    n = Symbol('n')
+    base = imageset(Lambda(n, 2*n*pi + asin(y)), S.Integers)
+    c = ConditionSet(x, Contains(y, Interval(-1, 1)), base)
+    expected = ConditionSet(x, Contains(z, Interval(-1, 1)), base.subs(y, z))
+    substituted = c.subs(y, z)
+    assert substituted == expected
+    assert substituted.sym == x
+    assert substituted.free_symbols == {z}
+    assert c.free_symbols == {y}
+    assert c.subs(y, z, simultaneous=True) == expected
+    assert c.xreplace({y: z}) == expected
+    assert c.subs(w, z) == c
 
 
 def test_subs_CondSet_tebr():
