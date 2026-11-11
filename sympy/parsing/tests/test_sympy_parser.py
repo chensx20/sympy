@@ -6,9 +6,10 @@ import builtins
 import types
 
 from sympy.assumptions import Q
-from sympy.core import Symbol, Function, Float, Rational, Integer, I, Mul, Pow, Eq
+from sympy.core import Symbol, Function, Float, Rational, Integer, I, Add, Mul, Pow, Eq
+from sympy.core.relational import Ne, Lt, Le, Gt, Ge
 from sympy.functions import exp, factorial, factorial2, sin, Min, Max
-from sympy.logic import And
+from sympy.logic import And, Or
 from sympy.series import Limit
 from sympy.testing.pytest import raises, skip
 
@@ -207,6 +208,102 @@ def test_function_evaluate_false():
         assert case == str(expr) != str(expr.doit())
     assert str(parse_expr('ln(0)', evaluate=False)) == 'log(0)'
     assert str(parse_expr('cbrt(0)', evaluate=False)) == '0**(1/3)'
+
+
+def test_issue_24661():
+    x = Symbol('x')
+    y = Symbol('y')
+    operators = [('<', Lt), ('<=', Le), ('>', Gt), ('>=', Ge),
+                 ('==', Eq), ('!=', Ne)]
+    for operator, relation in operators:
+        for left, right in [(Integer(1), Integer(2)), (Integer(2), Integer(1)),
+                            (Integer(1), Integer(1)), (x, y), (x, x)]:
+            expression = '%s %s %s' % (left, operator, right)
+            parsed = parse_expr(expression, evaluate=False)
+            assert parsed == relation(left, right, evaluate=False)
+            assert parsed.args == (left, right)
+    assert str(parse_expr('1 < 2', evaluate=False)) == '1 < 2'
+    assert parse_expr('1 < 2', evaluate=0) == Lt(1, 2, evaluate=False)
+
+
+def test_issue_24661_chains():
+    x = Symbol('x')
+    y = Symbol('y')
+    z = Symbol('z')
+    cases = [
+        ('1 < 2 < 3', [Lt(1, 2, evaluate=False), Lt(2, 3, evaluate=False)]),
+        ('3 < 2 < 1', [Lt(3, 2, evaluate=False), Lt(2, 1, evaluate=False)]),
+        ('x < y <= z', [Lt(x, y, evaluate=False), Le(y, z, evaluate=False)]),
+        ('0 < x >= 1', [Lt(0, x, evaluate=False), Ge(x, 1, evaluate=False)]),
+        ('x == y != z', [Eq(x, y, evaluate=False), Ne(y, z, evaluate=False)]),
+        ('1 == 1 == 1', [Eq(1, 1, evaluate=False), Eq(1, 1, evaluate=False)]),
+        ('0 < x <= y > z >= 1 != 2 == 2',
+         [Lt(0, x, evaluate=False), Le(x, y, evaluate=False),
+          Gt(y, z, evaluate=False), Ge(z, 1, evaluate=False),
+          Ne(1, 2, evaluate=False), Eq(2, 2, evaluate=False)]),
+    ]
+    for expression, relations in cases:
+        assert parse_expr(expression, evaluate=False) == And(
+            *relations, evaluate=False)
+
+
+def test_issue_24661_recursive():
+    x = Symbol('x')
+    y = Symbol('y')
+    left = Add(1, 2, evaluate=False)
+    middle = sin(Add(x, 0, evaluate=False), evaluate=False)
+    right = Pow(Add(y, 1, evaluate=False), 2, evaluate=False)
+    assert parse_expr('1 + 2 < sin(x + 0) <= (y + 1)**2',
+                      evaluate=False) == And(
+        Lt(left, middle, evaluate=False), Le(middle, right, evaluate=False),
+        evaluate=False)
+    assert parse_expr('sin(0) > exp(0)', evaluate=False) == Gt(
+        sin(0, evaluate=False), exp(0, evaluate=False), evaluate=False)
+    assert parse_expr('2*x - 1 < y/3', evaluate=False) == Lt(
+        Add(Mul(2, x, evaluate=False), Mul(-1, 1, evaluate=False),
+            evaluate=False),
+        Mul(y, Pow(3, -1, evaluate=False), evaluate=False), evaluate=False)
+    first = Lt(x, y, evaluate=False)
+    second = Gt(y, 1, evaluate=False)
+    assert parse_expr('[[x < y], [y > 1]]', evaluate=False) == [[first], [second]]
+    assert parse_expr('(x < y) & (y > 1)', evaluate=False) == And(
+        first, second, evaluate=False)
+    assert parse_expr('(x < y) | (y > 1)', evaluate=False) == Or(
+        first, second, evaluate=False)
+
+
+def test_issue_24661_unsupported():
+    for operator, name in [('in', 'In'), ('not in', 'NotIn'),
+                           ('is', 'Is'), ('is not', 'IsNot')]:
+        for expression in ['x %s y', '0 < x %s y', 'x %s y < 2']:
+            error = raises(ValueError, lambda:
+                parse_expr(expression % operator, evaluate=False))
+            assert 'Unsupported comparison operator: ' + name == str(error.value)
+
+
+def test_issue_24661_namespaces():
+    x = Symbol('x')
+    y = Symbol('y')
+    assert parse_expr('a > b', local_dict={'a': x, 'b': y},
+                      evaluate=False) == Gt(x, y, evaluate=False)
+    assert parse_expr('a < b < c',
+                      global_dict={'a': x, 'b': y, 'c': Integer(3),
+                                   'Lt': Lt, 'And': And},
+                      evaluate=False) == And(Lt(x, y, evaluate=False),
+                                             Lt(y, 3, evaluate=False),
+                                             evaluate=False)
+    assert parse_expr('x < y', local_dict={'Lt': Gt},
+                      evaluate=False) == Gt(x, y, evaluate=False)
+    for evaluate in [True, 1]:
+        assert parse_expr('1 < 2', evaluate=evaluate) == True
+        assert parse_expr('2 < 1', evaluate=evaluate) == False
+        assert parse_expr('1 < 2 < 3', evaluate=evaluate) == True
+        assert parse_expr('x == y', evaluate=evaluate) == False
+        assert parse_expr('x != y', evaluate=evaluate) == True
+        assert parse_expr('x < y', evaluate=evaluate) == Lt(x, y)
+        assert parse_expr('1 in [1, 2]', evaluate=evaluate) == True
+    assert parse_expr('1 < 2') == True
+    assert parse_expr('x == y') == False
 
 
 def test_issue_10773():

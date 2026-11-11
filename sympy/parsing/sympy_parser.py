@@ -1110,6 +1110,14 @@ class EvaluateFalseTransformer(ast.NodeTransformer):
         ast.BitAnd: 'And',
         ast.BitXor: 'Not',
     }
+    relational_operators = {
+        ast.Lt: 'Lt',
+        ast.LtE: 'Le',
+        ast.Gt: 'Gt',
+        ast.GtE: 'Ge',
+        ast.Eq: 'Eq',
+        ast.NotEq: 'Ne',
+    }
     functions = (
         'Abs', 'im', 're', 'sign', 'arg', 'conjugate',
         'acos', 'acot', 'acsc', 'asec', 'asin', 'atan',
@@ -1133,6 +1141,30 @@ class EvaluateFalseTransformer(ast.NodeTransformer):
             else:
                 result.append(arg)
         return result
+
+    def visit_Compare(self, node):
+        for operator in node.ops:
+            if operator.__class__ not in self.relational_operators:
+                raise ValueError("Unsupported comparison operator: %s" %
+                                 operator.__class__.__name__)
+        operands = [self.visit(operand) for operand in
+                    [node.left] + node.comparators]
+        relations = [
+            ast.Call(
+                func=ast.Name(id=self.relational_operators[operator.__class__],
+                              ctx=ast.Load()),
+                args=[left, right],
+                keywords=[ast.keyword(arg='evaluate', value=ast.Constant(False))],
+            )
+            for left, operator, right in zip(operands, node.ops, operands[1:])
+        ]
+        if len(relations) == 1:
+            return relations[0]
+        return ast.Call(
+            func=ast.Name(id='And', ctx=ast.Load()),
+            args=relations,
+            keywords=[ast.keyword(arg='evaluate', value=ast.Constant(False))],
+        )
 
     def visit_BinOp(self, node):
         if node.op.__class__ in self.operators:
