@@ -23,7 +23,7 @@ from sympy import (
 from sympy.ntheory.factor_ import udivisor_sigma
 
 from sympy.abc import mu, tau
-from sympy.printing.latex import (latex, translate, greek_letters_set,
+from sympy.printing.latex import (latex, LatexPrinter, translate, greek_letters_set,
                                   tex_greek_dictionary)
 from sympy.tensor.array import (ImmutableDenseNDimArray, ImmutableSparseNDimArray,
                                 MutableSparseNDimArray, MutableDenseNDimArray)
@@ -991,6 +991,82 @@ def test_latex_mul_symbol():
     assert latex(4*x, mul_symbol='dot') == "4 \\cdot x"
     assert latex(4*x, mul_symbol='ldot') == r"4 \,.\, x"
 
+    assert latex(3*x**2*y) == '3 x^{2} y'
+    for symbol, separator in [(None, ' '), ('dot', r' \cdot '),
+            ('times', r' \times '), ('ldot', r' \,.\, ')]:
+        assert latex(3*x**2*y, mul_symbol=symbol) == \
+            separator.join(['3', 'x^{2}', 'y'])
+        number_separator = r' \cdot ' if symbol is None else separator
+        assert latex(4*4**x, mul_symbol=symbol) == \
+            '4' + number_separator + '4^{x}'
+        assert latex(Float(1.0e-100), mul_symbol=symbol) == \
+            '1.0' + number_separator + '10^{-100}'
+
+    for separator in ['', r'\,', r' \star ', '|', r'\quadruple ',
+            r'\qquadruple ', r'\hspace{1em}', r'\quad x', r'\,|']:
+        expected = separator.join(['3', 'x^{2}', 'y'])
+        assert latex(3*x**2*y, mul_symbol=separator) == expected
+        assert latex(3*x**2*y, mul_symbol=separator, mode='inline') == \
+            '$' + expected + '$'
+        if separator not in ['', r'\,']:
+            assert latex(4*4**x, mul_symbol=separator) == \
+                '4' + separator + '4^{x}'
+            assert latex(Float(1.0e-100), mul_symbol=separator) == \
+                '1.0' + separator + '10^{-100}'
+
+
+def test_latex_mul_symbol_spacing():
+    separators = ['', ' ', '  ', '\t\n', r'\,', r'\:', r'\;', r'\!',
+        r'\ ', r'\quad', r'\qquad', r'\,\,', r'\quad\qquad',
+        r' \, \: \;\!\ \quad \qquad ', '\n' + r'\,' + '\t']
+    for separator in separators:
+        assert latex(3*x**2*y, mul_symbol=separator) == \
+            separator.join(['3', 'x^{2}', 'y'])
+        assert latex(4*4**x, mul_symbol=separator) == r'4 \cdot 4^{x}'
+        assert latex(1/(4*4**log(2)), mul_symbol=separator) == \
+            r'\frac{1}{4 \cdot 4^{\log{\left (2 \right )}}}'
+        assert latex(1.5e20*x, mul_symbol=separator) == \
+            r'1.5 \cdot 10^{20}' + separator + 'x'
+        assert latex(Float(1.0e-100), mul_symbol=separator) == \
+            r'1.0 \cdot 10^{-100}'
+
+
+def test_latex_mul_symbol_printer():
+    custom = LatexPrinter({'mul_symbol': r'\,'})
+    default = LatexPrinter()
+    for expr, expected in [(3*x**2*y, r'3\,x^{2}\,y'),
+            (4*4**x, r'4 \cdot 4^{x}'),
+            (Float(1.0e-100), r'1.0 \cdot 10^{-100}')]:
+        assert custom.doprint(expr) == expected
+        assert latex(expr, mul_symbol=r'\,') == expected
+        assert default.doprint(expr) == latex(expr)
+        assert custom.doprint(expr) == expected
+    assert latex(3*x**2*y) == '3 x^{2} y'
+    assert default.doprint(3*x**2*y) == '3 x^{2} y'
+
+
+def test_latex_mul_symbol_operands():
+    assert latex(-3*x**2*y, mul_symbol=r'\,') == r'- 3\,x^{2}\,y'
+    assert latex(3*x**2*y/z, mul_symbol=r'\,') == \
+        r'\frac{3\,x^{2}\,y}{z}'
+    assert latex(3/(x*y), mul_symbol=r'\,') == r'\frac{3}{x\,y}'
+    assert latex(3*x**2*y/z, mul_symbol=r'\,', long_frac_ratio=0) == \
+        r'\frac{1}{z}\,3\,x^{2}\,y'
+    assert latex(3*x**2*y/z, mul_symbol=r'\,', fold_short_frac=True) == \
+        r'3\,x^{2}\,y / z'
+    assert latex((x + y)/(2*x), mul_symbol=r'\,', long_frac_ratio=0) == \
+        r'\frac{1}{2\,x}\,\left(x + y\right)'
+    assert latex(Integral(2*x**2*y, x), mul_symbol=r'\,') == \
+        r'\int 2\,x^{2}\,y\, dx'
+    assert latex(diff(3*x**2*y, x, evaluate=False), mul_symbol=r'\,') == \
+        r'\frac{\partial}{\partial x} 3\,x^{2}\,y'
+    assert latex(diff(3*x**2*y + x, x, evaluate=False), mul_symbol=r'\,') == \
+        r'\frac{\partial}{\partial x} \left(3\,x^{2}\,y + x\right)'
+    A, B, C = symbols('A B C', commutative=False)
+    assert latex(C**-1*A*B, mul_symbol=r'\,') == r'C^{-1}\,A\,B'
+    assert latex(A*C**-1*B, mul_symbol=r' \star ') == \
+        r'A \star C^{-1} \star B'
+
 
 def test_latex_issue_4381():
     y = 4*4**log(2)
@@ -1064,6 +1140,10 @@ def test_latex_PolyElement():
     assert latex(x - x) == r"0"
     assert latex(x - 1) == r"x - 1"
     assert latex(x + 1) == r"x + 1"
+    assert latex(3*x**2*y, mul_symbol=r'\,') == r'3\,{x}^{2}\,y'
+    assert latex(3*x**2*y, mul_symbol='') == r'3{x}^{2}y'
+    assert latex(3*x**2*y, mul_symbol=r' \star ') == \
+        r'3 \star {x}^{2} \star y'
 
     assert latex((u**2 + 3*u*v + 1)*x**2*y + u + 1) == r"\left({u}^{2} + 3 u v + 1\right) {x}^{2} y + u + 1"
     assert latex((u**2 + 3*u*v + 1)*x**2*y + (u + 1)*x) == r"\left({u}^{2} + 3 u v + 1\right) {x}^{2} y + \left(u + 1\right) x"
