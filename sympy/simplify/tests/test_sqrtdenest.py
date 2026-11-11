@@ -1,5 +1,6 @@
-from sympy import sqrt, root, S, Symbol, sqrtdenest, Integral, cos
+from sympy import sqrt, root, S, Symbol, sqrtdenest, Integral, cos, I
 from sympy.simplify.sqrtdenest import _subsets as subsets
+from sympy.simplify.sqrtdenest import _sqrt_match
 from sympy.utilities.pytest import slow
 
 r2, r3, r5, r6, r7, r10, r15, r29 = [sqrt(x) for x in [2, 3, 5, 6, 7, 10,
@@ -18,6 +19,43 @@ def test_sqrtdenest():
         sqrt(3 + 2*r3): 3**(S(3)/4)*(r6/2 + 3*r2/2)/3}
     for i in d:
         assert sqrtdenest(i) == d[i]
+
+
+def test_issue_17318():
+    z = sqrt(1 + I)
+    assert sqrtdenest(z) == z
+
+
+def test_issue_17318_nested():
+    z = sqrt((3 - r2*sqrt(4 + I) + 3*I)/2)
+    expected = r2*sqrt(3 - r2*sqrt(4 + I) + 3*I)/2
+    assert sqrtdenest(z) == expected
+    assert sqrtdenest(expected) == expected
+
+
+def test_issue_17318_reported():
+    z = (3 - r2*sqrt(4 + 3*I) + 3*I)/2
+    assert sqrtdenest(z) == z
+    assert sqrtdenest(sqrt(z)) == sqrt(z)
+
+
+def test_issue_17318_match():
+    assert _sqrt_match(4 + 3*I) == []
+    assert _sqrt_match(1 + I) == []
+
+
+def test_issue_17318_imaginary_surd():
+    assert _sqrt_match(1 + I*r2) == [1, I, 2]
+    z = sqrt(1 + I*r2)
+    assert sqrtdenest(z) == z
+
+
+def test_sqrt_match():
+    assert _sqrt_match(5 + 2*r6) == [5, 2, 6]
+    assert _sqrt_match(S.Half + r2/3) == [S.Half, S.One/3, 2]
+    assert sqrtdenest(sqrt(5 + 2*r6)) == r2 + r3
+    z = sqrt(5 + r7)
+    assert sqrtdenest(z) == z
 
 
 def test_sqrtdenest2():
