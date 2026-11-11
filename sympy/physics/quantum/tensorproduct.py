@@ -113,6 +113,15 @@ class TensorProduct(Expr):
         (A + B)xC
         >>> tp.expand(tensorproduct=True)
         AxC + BxC
+
+    Concrete integer powers are evaluated in each tensor slot, including
+    formal inverses for negative integers. The zeroth power is the scalar 1.
+    Fractional, floating and symbolic exponents are left as tensor powers.
+
+        >>> TensorProduct(A, B)**2
+        (A**2)x(B**2)
+        >>> TensorProduct(A, B)**0
+        1
     """
     is_commutative = False
 
@@ -142,6 +151,10 @@ class TensorProduct(Expr):
 
     def _eval_adjoint(self):
         return TensorProduct(*[Dagger(i) for i in self.args])
+
+    def _eval_power(self, exp):
+        if exp.is_Integer:
+            return TensorProduct(*[arg**exp for arg in self.args])
 
     def _eval_rewrite(self, pattern, rule, **hints):
         sargs = self.args
@@ -273,9 +286,10 @@ def tensor_product_simp_Mul(e):
 
     Current the main use of this is to simplify a ``Mul`` of ``TensorProduct``s
     to a ``TensorProduct`` of ``Muls``. It currently only works for relatively
-    simple cases where the initial ``Mul`` only has scalars and raw
-    ``TensorProduct``s, not ``Add``, ``Pow``, ``Commutator``s of
-    ``TensorProduct``s.
+    simple cases where the initial ``Mul`` only has scalars, raw
+    ``TensorProduct``s and concrete integer powers of tensor products, not
+    ``Add`` or ``Commutator``s of ``TensorProduct``s. Unsupported powers
+    leave the enclosing product uncombined.
 
     Parameters
     ==========
@@ -310,11 +324,19 @@ def tensor_product_simp_Mul(e):
 
     """
     # TODO: This won't work with Muls that have other composites of
-    # TensorProducts, like an Add, Pow, Commutator, etc.
+    # TensorProducts, like an Add, Commutator, etc.
     # TODO: This only works for the equivalent of single Qbit gates.
-    if not isinstance(e, Mul):
+    if not isinstance(e, Mul) or not e.has(TensorProduct):
         return e
+    e = Mul(*[tensor_product_simp(arg)
+              if isinstance(arg, Pow) and arg.has(TensorProduct) else arg
+              for arg in e.args])
+    if not isinstance(e, Mul):
+        return tensor_product_simp(e)
     c_part, nc_part = e.args_cnc()
+    if any(isinstance(arg, Pow) and arg.has(TensorProduct)
+           for arg in nc_part):
+        return e
     n_nc = len(nc_part)
     if n_nc == 0 or n_nc == 1:
         return e
@@ -350,8 +372,10 @@ def tensor_product_simp(e, **hints):
 
     In general this will try to pull expressions inside of ``TensorProducts``.
     It currently only works for relatively simple cases where the products have
-    only scalars, raw ``TensorProducts``, not ``Add``, ``Pow``, ``Commutators``
-    of ``TensorProducts``. It is best to see what it does by showing examples.
+    only scalars, raw ``TensorProducts`` and their concrete integer powers,
+    not ``Add`` or ``Commutators`` of ``TensorProducts``. Fractional, floating
+    and symbolic exponents are not distributed over tensor slots; products
+    containing these powers are left uncombined.
 
     Examples
     ========
@@ -376,7 +400,18 @@ def tensor_product_simp(e, **hints):
     commutators and anticommutators as well:
 
     >>> tensor_product_simp(e**2)
-    (A*C)x(B*D)**2
+    ((A*C)**2)x((B*D)**2)
+
+    Concrete negative integers use formal inverses. As with ordinary powers,
+    the zeroth power is the scalar identity, not a tensor product:
+
+    >>> TensorProduct(A, B)**-1
+    (A**(-1))x(B**(-1))
+    >>> TensorProduct(A, B)**0
+    1
+    >>> from sympy import S
+    >>> tensor_product_simp(TensorProduct(A, B)**S.Half)
+    sqrt(AxB)
 
     """
     if isinstance(e, Add):
