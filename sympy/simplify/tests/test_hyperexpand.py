@@ -40,6 +40,11 @@ def test_hyperexpand():
         == asin(z)
 
 
+def test_polylog_half():
+    assert (hyperexpand(S.Half*hyper([1, 1, 1], [2, 2], S.Half)) ==
+            pi**2/12 - log(2)**2/2)
+
+
 def can_do(ap, bq, numerical=True, div=1, lowerplane=False):
     from sympy import exp_polar, exp
     r = hyperexpand(hyper(ap, bq, z))

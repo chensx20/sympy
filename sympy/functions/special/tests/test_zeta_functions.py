@@ -128,15 +128,54 @@ def test_polylog_expansion():
     assert polylog(s, 1) == zeta(s)
     assert polylog(s, -1) == -dirichlet_eta(s)
 
-    assert myexpand(polylog(1, z), -log(1 + exp_polar(-I*pi)*z))
+    assert myexpand(polylog(1, z), -log(1 - z))
     assert myexpand(polylog(0, z), z/(1 - z))
     assert myexpand(polylog(-1, z), z**2/(1 - z)**2 + z/(1 - z))
     assert myexpand(polylog(-5, z), None)
 
 
+def test_polylog_half():
+    value = pi**2/12 - log(2)**2/2
+    assert polylog(2, S.Half) == value
+    assert expand_func(polylog(2, S.Half)) == value
+    held = polylog(2, S.Half, evaluate=False)
+    assert held.func == polylog
+    assert held.args == (2, S.Half)
+    assert expand_func(held) == value
+    assert abs(held.evalf(30) - value.evalf(30)) < 1e-25
+    assert polylog(s, S.Half).func == polylog
+    assert polylog(2, Float(0.5)).func == polylog
+    assert polylog(Float(2), S.Half).func == polylog
+
+
+def test_polylog_one_expansion():
+    assert polylog(1, z).func == polylog
+    assert expand_func(polylog(1, z)) == -log(1 - z)
+    assert expand_func(polylog(1, S.Half)) == log(2)
+    assert expand_func(polylog(1, 2)) == -I*pi
+    assert expand_func(polylog(1, -2)) == -log(3)
+    assert (expand_func(polylog(1, z).diff(z)) ==
+            expand_func(polylog(1, z)).diff(z))
+    assert expand_func(polylog(2, z).diff(z)) == -log(1 - z)/z
+    for arg in (S.Half, 2, -2, 1 + I, 1 - I,
+                2 + I/1000, 2 - I/1000):
+        value = polylog(1, arg)
+        assert abs(value.evalf(30) - expand_func(value).evalf(30)) < 1e-25
+
+
+def test_polylog_one_polar_expansion():
+    p = Symbol('p', polar=True)
+    for arg in (p, 1 + p, polar_lift(z), polar_lift(-2),
+                z*exp_polar(2*pi*I), z*exp_polar(-2*pi*I),
+                1 + z*exp_polar(2*pi*I), 1 + z*exp_polar(-2*pi*I)):
+        assert (expand_func(polylog(1, arg)) ==
+                -log(1 + exp_polar(-I*pi)*arg))
+
+
 def test_lerchphi_expansion():
     assert myexpand(lerchphi(1, s, a), zeta(s, a))
     assert myexpand(lerchphi(z, s, 1), polylog(s, z)/z)
+    assert expand_func(lerchphi(S.Half, 2, 1)) == pi**2/6 - log(2)**2
 
     # direct summation
     assert myexpand(lerchphi(z, -1, a), a/(1 - z) + z/(1 - z)**2)

@@ -2,7 +2,8 @@
 from __future__ import print_function, division
 
 from sympy.core import Function, S, sympify, pi
-from sympy.core.function import ArgumentIndexError
+from sympy.core.function import ArgumentIndexError, expand_func
+from sympy.core.basic import preorder_traversal
 from sympy.core.compatibility import range
 from sympy.functions.combinatorial.numbers import bernoulli, factorial, harmonic
 from sympy.functions.elementary.exponential import log
@@ -156,7 +157,7 @@ class lerchphi(Function):
             zet = exp_polar(2*pi*I/n)
             root = z**(1/n)
             return add + mul*n**(s - 1)*Add(
-                *[polylog(s, zet**k*root)._eval_expand_func(**hints)
+                *[expand_func(polylog(s, zet**k*root))
                   / (unpolarify(zet)**k*root)**m for k in range(n)])
 
         # TODO use minpoly instead of ad-hoc methods when issue 5888 is fixed
@@ -246,6 +247,12 @@ class polylog(Function):
     >>> polylog(s, -1)
     -dirichlet_eta(s)
 
+    The dilogarithm at one half also has a closed form:
+
+    >>> from sympy import S
+    >>> polylog(2, S.Half)
+    -log(2)**2/2 + pi**2/12
+
     If :math:`s` is a negative integer, :math:`0` or :math:`1`, the
     polylogarithm can be expressed using elementary functions. This can be
     done using expand_func():
@@ -253,7 +260,7 @@ class polylog(Function):
     >>> from sympy import expand_func
     >>> from sympy.abc import z
     >>> expand_func(polylog(1, z))
-    -log(z*exp_polar(-I*pi) + 1)
+    -log(-z + 1)
     >>> expand_func(polylog(0, z))
     z/(-z + 1)
 
@@ -277,6 +284,8 @@ class polylog(Function):
             return -dirichlet_eta(s)
         elif z == 0:
             return 0
+        elif s is S(2) and z is S.Half:
+            return pi**2/12 - log(2)**2/2
 
     def fdiff(self, argindex=1):
         s, z = self.args
@@ -291,7 +300,9 @@ class polylog(Function):
         from sympy import log, expand_mul, Dummy, exp_polar, I
         s, z = self.args
         if s == 1:
-            return -log(1 + exp_polar(-I*pi)*z)
+            if any(arg.is_polar for arg in preorder_traversal(z)):
+                return -log(1 + exp_polar(-I*pi)*z)
+            return -log(1 - z)
         if s.is_Integer and s <= 0:
             u = Dummy('u')
             start = u/(1 - u)
