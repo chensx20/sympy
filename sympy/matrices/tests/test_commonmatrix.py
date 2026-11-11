@@ -201,6 +201,68 @@ def test_col_insert():
         l.insert(i, 4)
         assert flatten(zeros_Shaping(3).col_insert(i, c4).row(0).tolist()) == l
 
+def test_col_insert_identity():
+    expected = Matrix([
+        [1, 0, 0, 2, 2, 0, 0, 0],
+        [0, 1, 0, 2, 2, 0, 0, 0],
+        [0, 0, 1, 2, 2, 0, 0, 0],
+        [0, 0, 0, 2, 2, 1, 0, 0],
+        [0, 0, 0, 2, 2, 0, 1, 0],
+        [0, 0, 0, 2, 2, 0, 0, 1]])
+    m = ShapingOnlyMatrix(eye(6))
+    other = 2*ones(6, 2)
+    result = m.col_insert(3, other)
+    assert result == expected
+    assert result.shape == (6, 8)
+    assert type(result) is ShapingOnlyMatrix
+    assert m == eye(6)
+    assert other == 2*ones(6, 2)
+
+def test_col_insert_rectangular():
+    m = ShapingOnlyMatrix([[11, 12, 13], [21, 22, 23]])
+    for other_cls in (Matrix, SparseMatrix):
+        other = other_cls([[91, 92], [81, 82]])
+        assert m.col_insert(1, other) == Matrix([
+            [11, 91, 92, 12, 13], [21, 81, 82, 22, 23]])
+        assert m.col_insert(2, other) == Matrix([
+            [11, 12, 91, 92, 13], [21, 22, 81, 82, 23]])
+
+def test_col_insert_positions():
+    rows = [[11, 12, 13], [21, 22, 23]]
+    inserted = [[91, 92], [81, 82]]
+    m = ShapingOnlyMatrix(rows)
+    for other_cls in (Matrix, SparseMatrix):
+        for width in (0, 1, 2):
+            other = other_cls(2, width, lambda i, j: inserted[i][j])
+            for pos in (-5, -3, -2, -1, 0, 1, 2, 3, 5):
+                index = max(0, min(3, pos + 3 if pos < 0 else pos))
+                expected = Matrix([
+                    row[:index] + block[:width] + row[index:]
+                    for row, block in zip(rows, inserted)])
+                result = m.col_insert(pos, other)
+                assert result == expected
+                assert result.shape == (2, 3 + width)
+                assert type(result) is ShapingOnlyMatrix
+                assert m == Matrix(rows)
+                assert other == Matrix(2, width,
+                                       lambda i, j: inserted[i][j])
+                if width == 0:
+                    assert result == m
+
+def test_col_insert_shape_and_empty():
+    m = ShapingOnlyMatrix([[11, 12, 13], [21, 22, 23]])
+    for other_cls in (Matrix, SparseMatrix):
+        other = other_cls([[91, 92]])
+        raises(ShapeError, lambda: m.col_insert(1, other))
+        empty = ShapingOnlyMatrix(0, 0, [])
+        result = empty.col_insert(42, other)
+        assert result == other
+        assert type(result) is ShapingOnlyMatrix
+        assert result is not other
+        assert empty.shape == (0, 0)
+        assert m == Matrix([[11, 12, 13], [21, 22, 23]])
+        assert other == Matrix([[91, 92]])
+
 def test_extract():
     m = ShapingOnlyMatrix(4, 3, lambda i, j: i*3 + j)
     assert m.extract([0, 1, 3], [0, 1]) == Matrix(3, 2, [0, 1, 3, 4, 9, 10])
