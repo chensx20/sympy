@@ -156,11 +156,18 @@ class LatexPrinter(Printer):
             "times": r" \times "
         }
 
-        self._settings['mul_symbol_latex'] = \
-            mul_symbol_table[self._settings['mul_symbol']]
-
-        self._settings['mul_symbol_latex_numbers'] = \
-            mul_symbol_table[self._settings['mul_symbol'] or 'dot']
+        mul_symbol = self._settings['mul_symbol']
+        if mul_symbol in mul_symbol_table:
+            self._settings['mul_symbol_latex'] = mul_symbol_table[mul_symbol]
+            self._settings['mul_symbol_latex_numbers'] = \
+                mul_symbol_table[mul_symbol or 'dot']
+        else:
+            self._settings['mul_symbol_latex'] = mul_symbol
+            if re.match(r'(?:\s|\\[,;:! ]|\\(?:quad|qquad)(?![a-zA-Z]))*\Z',
+                    mul_symbol):
+                self._settings['mul_symbol_latex_numbers'] = mul_symbol_table['dot']
+            else:
+                self._settings['mul_symbol_latex_numbers'] = mul_symbol
 
         self._delim_dict = {'(': ')', '[': ']'}
 
@@ -2154,11 +2161,22 @@ def latex(expr, **settings):
     >>> print(latex(Integral(r, r)/2/pi, long_frac_ratio=0))
     \frac{1}{2 \pi} \int r\, dr
 
-    mul_symbol: The symbol to use for multiplication. Can be one of None,
-    "ldot", "dot", or "times".
+    mul_symbol: The symbol to use for multiplication. The reserved values None,
+    "ldot", "dot", and "times" select the existing presets. Any other string
+    is used literally, without adding spaces or escaping LaTeX commands.
+    Include any required control-word delimiter, for example r" \star ".
+    Empty strings and combinations of whitespace, ``\,``, ``\:``, ``\;``,
+    ``\!``, escaped spaces, ``\quad``, and ``\qquad`` still use a dot
+    between adjacent numbers and in scientific notation. Other custom macros
+    or spacing commands such as ``\hspace{...}`` are not interpreted; ensuring
+    that these distinguish adjacent numbers is the caller's responsibility.
 
     >>> print(latex((2*tau)**sin(Rational(7,2)), mul_symbol="times"))
     \left(2 \times \tau\right)^{\sin{\left (\frac{7}{2} \right )}}
+    >>> print(latex(3*x**2*y, mul_symbol=r"\,"))
+    3\,x^{2}\,y
+    >>> print(latex(4*4**x, mul_symbol=r"\,"))
+    4 \cdot 4^{x}
 
     inv_trig_style: How inverse trig functions should be displayed. Can be one
     of "abbreviated", "full", or "power". Defaults to "abbreviated".
