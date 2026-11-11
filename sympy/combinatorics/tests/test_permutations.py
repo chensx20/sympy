@@ -3,11 +3,190 @@ from itertools import permutations
 from sympy.core.compatibility import range
 from sympy.core.symbol import Symbol
 from sympy.combinatorics.permutations import (Permutation, _af_parity,
-    _af_rmul, _af_rmuln, Cycle)
+    _af_rmul, _af_rmuln, _af_new, Cycle)
 from sympy.utilities.pytest import raises
 
 rmul = Permutation.rmul
 a = Symbol('a', integer=True)
+
+
+class _SubclassPermutation(Permutation):
+    pass
+
+
+def test_subclass_construction():
+    cases = [
+        ((), {}, []),
+        ((), {'size': 3}, [0, 1, 2]),
+        ((), {'size': '3'}, [0, 1, 2]),
+        ((-1,), {}, []),
+        ((2,), {}, [0, 1, 2]),
+        ((2,), {'size': 5}, [0, 1, 2]),
+        ((0, 2), {}, [2, 1, 0]),
+        ((0, 2), {'size': 5}, [2, 1, 0, 3, 4]),
+        ((0, 2), {'size': 1}, [2, 1, 0]),
+        ((Cycle(),), {'size': 0}, [0]),
+        ((Cycle(0, 2),), {}, [2, 1, 0]),
+        ((Cycle(0, 2),), {'size': 5}, [2, 1, 0, 3, 4]),
+        ((Cycle(0, 2),), {'size': 1}, [2, 1, 0]),
+        (([],), {'size': 3}, [0, 1, 2]),
+        (([2, 0, 1],), {}, [2, 0, 1]),
+        (((2, 0, 1),), {}, [2, 0, 1]),
+        ((['1', '0'],), {}, [1, 0]),
+        (([[0, 1], [1, 2]],), {}, [2, 0, 1]),
+        ((((0, 1), (1, 2)),), {'size': 4}, [2, 0, 1, 3]),
+        (([1, 0, 2],), {'size': 1}, [1, 0, 2]),
+        (([[0, 2]],), {'size': 1}, [2, 1, 0]),
+    ]
+    for args, kwargs, expected in cases:
+        p = _SubclassPermutation(*args, **kwargs)
+        assert type(p) is _SubclassPermutation
+        assert p.array_form == expected
+        assert p.size == len(expected)
+
+    for cls in (Permutation, _SubclassPermutation):
+        for args in (([1],), ([1, 1, 0],), ([4, 5],),
+                     ([[1, 2], 0],), ([1, 2], [0]), ((-1, 0),)):
+            raises(ValueError, lambda: cls(*args))
+        raises(TypeError, lambda: cls(1.5))
+        raises(ValueError, lambda: cls(Cycle()))
+        raises(ValueError, lambda: cls(size='invalid'))
+
+
+def test_subclass_conversion():
+    class SiblingPermutation(Permutation):
+        pass
+
+    class DescendantPermutation(_SubclassPermutation):
+        pass
+
+    for source_cls in (Permutation, _SubclassPermutation,
+                       SiblingPermutation, DescendantPermutation):
+        source = source_cls([1, 2, 0])
+        for cls in (Permutation, _SubclassPermutation,
+                    SiblingPermutation, DescendantPermutation):
+            for kwargs in ({}, {'size': 3}):
+                p = cls(source, **kwargs)
+                if isinstance(source, cls):
+                    assert p is source
+                else:
+                    assert type(p) is cls
+                    assert p is not source
+                    assert p._array_form is not source._array_form
+                assert p.array_form == [1, 2, 0]
+                assert p.size == 3
+            for size, expected in ((1, [1, 2, 0]),
+                                   (5, [1, 2, 0, 3, 4])):
+                p = cls(source, size=size)
+                assert type(p) is cls
+                assert p is not source
+                assert p._array_form is not source._array_form
+                assert p.array_form == expected
+                assert p.size == len(expected)
+        assert source.array_form == [1, 2, 0]
+
+
+def test_subclass_allocator():
+    for factory, cls in ((_SubclassPermutation._af_new, _SubclassPermutation),
+                         (Permutation._af_new, Permutation),
+                         (_af_new, Permutation)):
+        array = [1, 0]
+        p = factory(array)
+        assert type(p) is cls
+        assert p._array_form is array
+        assert p.args[0] is array
+        assert p.size == 2
+        assert p._mhash is None
+        assert p._assumptions is cls.default_assumptions
+        unvalidated = [2]
+        assert factory(unvalidated)._array_form is unvalidated
+
+    for cls in (Permutation, _SubclassPermutation):
+        array = [1, 0]
+        p = cls(array)
+        assert p._array_form is not array
+        array[:] = [0, 1]
+        assert p.array_form == [1, 0]
+        copy = p.array_form
+        copy[:] = [0, 1]
+        assert p.array_form == [1, 0]
+
+
+def test_subclass_factories():
+    cases = [
+        ('from_sequence', ('SymPy',), {}, [1, 3, 2, 0, 4]),
+        ('from_sequence', ('SymPy',), {'key': lambda x: x.lower()},
+         [2, 3, 0, 1, 4]),
+        ('from_sequence', ('',), {}, []),
+        ('unrank_nonlex', (4, 5), {}, [2, 0, 3, 1]),
+        ('unrank_nonlex', (4, -1), {}, [0, 1, 2, 3]),
+        ('unrank_trotterjohnson', (5, 10), {}, [0, 3, 1, 2, 4]),
+        ('josephus', (3, 6, 2), {}, [2, 5, 3, 1, 4, 0]),
+        ('josephus', (4, 6), {}, [3, 1, 0, 2, 5, 4]),
+        ('from_inversion_vector', ([3, 2, 1, 0, 0],), {},
+         [3, 2, 1, 0, 4, 5]),
+        ('from_inversion_vector', ([],), {}, [0]),
+        ('from_inversion_vector', ([-1],), {}, [1, 0]),
+        ('unrank_lex', (5, 10), {}, [0, 2, 4, 1, 3]),
+    ]
+    for name, args, kwargs, expected in cases:
+        for cls in (Permutation, _SubclassPermutation):
+            p = getattr(cls, name)(*args, **kwargs)
+            assert type(p) is cls
+            assert p.array_form == expected
+            assert p.size == len(expected)
+
+    for n in range(5):
+        for rank, array in enumerate(permutations(range(n))):
+            for name, ranker in (('unrank_lex', 'rank'),
+                                ('unrank_nonlex', 'rank_nonlex'),
+                                ('unrank_trotterjohnson',
+                                 'rank_trotterjohnson')):
+                p = getattr(_SubclassPermutation, name)(n, rank)
+                base = getattr(Permutation, name)(n, rank)
+                assert type(p) is _SubclassPermutation
+                assert p.array_form == base.array_form
+                assert p.size == n
+                if n:
+                    assert getattr(p, ranker)() == rank
+            assert (_SubclassPermutation.unrank_lex(n, rank).array_form ==
+                    list(array))
+
+    for cls in (Permutation, _SubclassPermutation):
+        for n in (0, 1, 2, 10):
+            p = cls.random(n)
+            assert type(p) is cls
+            assert p.size == n
+            assert sorted(p.array_form) == list(range(n))
+        for inversion in ([0, 2], [3], [-3]):
+            raises(ValueError, lambda: cls.from_inversion_vector(inversion))
+        raises(TypeError, lambda: cls.from_inversion_vector([0.5]))
+
+
+def test_subclass_caches_and_reconstruction():
+    source = Permutation([1, 2, 0])
+    assert source.cyclic_form == [[0, 1, 2]]
+    assert source.cycle_structure == {3: 1}
+    assert source.rank() == 3
+    hash(source)
+    for p in (_SubclassPermutation(source),
+              _SubclassPermutation._af_new(source.array_form),
+              _SubclassPermutation.unrank_lex(3, 3)):
+        assert type(p) is _SubclassPermutation
+        assert p._cyclic_form is None
+        assert p._cycle_structure is None
+        assert p._rank is None
+        assert p._mhash is None
+        assert p._assumptions is _SubclassPermutation.default_assumptions
+        reconstructed = p.func(*p.args)
+        assert type(reconstructed) is _SubclassPermutation
+        assert reconstructed == p
+        assert reconstructed.size == p.size
+        assert reconstructed._array_form is not p._array_form
+        assert p.cyclic_form == source.cyclic_form
+        assert p.cycle_structure == source.cycle_structure
+        assert p.rank() == source.rank()
+        assert hash(p) == hash(reconstructed)
 
 
 def test_Permutation():
