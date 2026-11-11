@@ -1,3 +1,5 @@
+from itertools import permutations, product
+
 from sympy import (Add, Matrix, Mul, S, symbols, Eq, pi, factorint, oo,
                    powsimp, Rational)
 from sympy.core.function import _mexpand
@@ -908,6 +910,49 @@ def test_diophantine_permute_sign():
     assert len(diophantine(eq, permute=True)) == 62000
     soln = set([(-1, -1), (-1, 2), (1, -2), (1, 1)])
     assert diophantine(10*x**2 + 12*x*y + 12*y**2 - 34, permute=True) == soln
+
+
+def test_diophantine_permute_syms_fourth_powers():
+    m, n = symbols('m n', integer=True)
+    eq = n**4 + m**4 - 2**4 - 3**4
+    complete_soln = {(-3, -2), (-3, 2), (-2, -3), (-2, 3),
+                     (2, -3), (2, 3), (3, -2), (3, 2)}
+    assert diophantine(eq) == {(2, 3)}
+    assert diophantine(eq, permute=False) == {(2, 3)}
+    assert diophantine(eq, permute=True) == complete_soln
+    for syms in ((m, n), [m, n], (n, m), [n, m]):
+        base_soln = {(2, 3)} if syms[0] == m else {(3, 2)}
+        assert diophantine(eq, syms=syms) == base_soln
+        assert diophantine(eq, syms=syms, permute=False) == base_soln
+        assert diophantine(eq, syms=syms, permute=True) == complete_soln
+
+
+def test_diophantine_permute_syms_three_symbols():
+    eq = a**2 + b**2 + c**2 - 14
+    complete_soln = {
+        tuple(sign*value for sign, value in zip(signs, values))
+        for values in permutations((1, 2, 3))
+        for signs in product((-1, 1), repeat=3)}
+    assert len(complete_soln) == 48
+    assert diophantine(eq) == {(1, 2, 3)}
+    assert diophantine(eq, permute=True) == complete_soln
+    for syms in ((a, b, c), [a, b, c], (c, b, a), [c, b, a]):
+        base_soln = {(1, 2, 3)} if syms[0] == a else {(3, 2, 1)}
+        assert diophantine(eq, syms=syms) == base_soln
+        assert diophantine(eq, syms=syms, permute=False) == base_soln
+        assert diophantine(eq, syms=syms, permute=True) == complete_soln
+
+
+def test_diophantine_permute_syms_asymmetric():
+    m, n = symbols('m n', integer=True)
+    eq = 10*m**2 + 12*m*n + 12*n**2 - 34
+    canonical_soln = {(-1, -1), (-1, 2), (1, -2), (1, 1)}
+    reversed_soln = {(-1, -1), (2, -1), (-2, 1), (1, 1)}
+    assert diophantine(eq, permute=True) == canonical_soln
+    for syms in ((m, n), [m, n]):
+        assert diophantine(eq, syms=syms, permute=True) == canonical_soln
+    for syms in ((n, m), [n, m]):
+        assert diophantine(eq, syms=syms, permute=True) == reversed_soln
 
 
 @XFAIL
