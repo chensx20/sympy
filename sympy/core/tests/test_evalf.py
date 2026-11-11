@@ -321,11 +321,68 @@ def test_implemented_function_evalf():
     from sympy.utilities.lambdify import implemented_function
     f = Function('f')
     f = implemented_function(f, lambda x: x + 1)
-    assert str(f(x)) == "f(x)"
-    assert str(f(2)) == "f(2)"
-    assert f(2).evalf() == 3
+    try:
+        assert str(f(x)) == "f(x)"
+        assert str(f(2)) == "f(2)"
+        assert f(2).evalf() == 3
+        assert f(x).evalf() == f(x)
+    finally:
+        del f._imp_  # Cached functions must not retain implementations.
+
+
+def test_implemented_function_evalf_recursive():
+    from sympy.utilities.lambdify import implemented_function
+    f = implemented_function('implemented_evalf_square', lambda x: x**2)
+    g = implemented_function('implemented_evalf_double', lambda x: 2*x)
+    assert f(2).evalf() == 4
+    assert g(2).evalf() == 4
+    assert f(g(2)).evalf() == 16
+    assert g(f(2)).evalf() == 8
+    assert f(g(f(2))).evalf() == 64
     assert f(x).evalf() == f(x)
-    del f._imp_     # XXX: due to caching _imp_ would influence all other tests
+    assert g(x).evalf() == g(x)
+    assert f(g(x)).evalf() == f(g(x))
+    assert g(f(x)).evalf() == g(f(x))
+    assert f(g(f(x))).evalf() == f(g(f(x)))
+
+
+def test_implemented_function_evalf_returns():
+    from sympy.utilities.lambdify import implemented_function
+    for i, value in enumerate([2, 0.5, Rational(1, 3), pi, 1 + I]):
+        f = implemented_function('implemented_evalf_return_%s' % i,
+            lambda x, value=value: value)
+        assert f(2).evalf(50) == sympify(value).evalf(50)
+
+    f = implemented_function('implemented_evalf_symbol', lambda arg: x)
+    assert f(2).evalf() == f(2)
+
+
+def test_implemented_function_evalf_precision():
+    from sympy.utilities.lambdify import implemented_function
+    f = implemented_function('implemented_evalf_pi', lambda x: pi)
+    assert f(2).evalf(50) == pi.evalf(50)
+    assert f(2)._eval_evalf(53) == pi._evalf(53)
+
+
+def test_implemented_function_evalf_function_return():
+    from sympy.utilities.lambdify import implemented_function
+    g = implemented_function('implemented_evalf_inner', lambda x: 2*x)
+    f = implemented_function('implemented_evalf_outer', lambda x: g(x))
+    assert f(2).evalf() == 4
+    assert f(x).evalf() == f(x)
+
+
+def test_implemented_function_evalf_exceptions():
+    from sympy.utilities.lambdify import implemented_function
+    for error in [AttributeError, TypeError, ValueError, RuntimeError]:
+        def implementation(x, error=error):
+            raise error('implementation failed')
+        f = implemented_function('implemented_evalf_%s' % error.__name__,
+            implementation)
+        if error is RuntimeError:
+            raises(RuntimeError, lambda: f(2).evalf())
+        else:
+            assert f(2).evalf() == f(2)
 
 
 def test_evaluate_false():
