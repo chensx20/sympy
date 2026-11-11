@@ -2305,12 +2305,14 @@ class DisjointUnion(Set):
         return element[0] in self.sets[element[1]]
 
     def _kind(self):
-        if not self.args:
+        kinds = {s.kind for s in self.sets} - {SetKind()}
+        if not kinds:
             return SetKind()
-        elif all(i.kind == self.args[0].kind for i in self.args):
-            return self.args[0].kind
+        if len(kinds) == 1:
+            element_kind = kinds.pop().element_kind
         else:
-            return SetKind(UndefinedKind)
+            element_kind = UndefinedKind
+        return SetKind(TupleKind(element_kind, NumberKind))
 
     def __iter__(self):
         if self.is_iterable:

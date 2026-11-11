@@ -4,7 +4,7 @@ from sympy.sets.contains import Contains
 from sympy.sets.fancysets import (ImageSet, Range, normalize_theta_set,
                                   ComplexRegion)
 from sympy.sets.sets import (FiniteSet, Interval, Union, imageset,
-                             Intersection, ProductSet, SetKind)
+                             Complement, Intersection, ProductSet, SetKind)
 from sympy.sets.conditionset import ConditionSet
 from sympy.simplify.simplify import simplify
 from sympy.core.basic import Basic
@@ -1144,7 +1144,18 @@ def test_SetKind_fancySet():
     a = Interval(2, 3)
     b = Interval(4, 6)
     c1 = ComplexRegion(a*b)
-    assert c1.kind is SetKind(TupleKind(NumberKind, NumberKind))
+    assert c1.kind is SetKind(NumberKind)
+    assert (a*b).kind is SetKind(TupleKind(NumberKind, NumberKind))
+    c2 = ComplexRegion(Interval(0, 1)*Interval(0, 2*pi), polar=True)
+    assert c2.kind is SetKind(NumberKind)
+    assert S.Complexes.kind is SetKind(NumberKind)
+    for region in (c1, c2, S.Complexes):
+        assert Complement(region, FiniteSet(I), evaluate=False).kind is SetKind(NumberKind)
+        assert Intersection(region, S.Integers, evaluate=False).kind is SetKind(NumberKind)
+        assert Union(region, FiniteSet(2), evaluate=False).kind is SetKind(NumberKind)
+    nested = Union(Complement(S.Complexes, FiniteSet(I), evaluate=False),
+                   Intersection(c1, S.Integers, evaluate=False), evaluate=False)
+    assert nested.kind is SetKind(NumberKind)
 
 
 def test_issue_9980():

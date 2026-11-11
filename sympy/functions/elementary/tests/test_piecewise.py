@@ -23,7 +23,9 @@ from sympy.logic.boolalg import (And, ITE, Not, Or)
 from sympy.matrices.expressions.matexpr import MatrixSymbol
 from sympy.printing import srepr
 from sympy.sets.contains import Contains
-from sympy.sets.sets import Interval
+from sympy.sets.fancysets import ComplexRegion
+from sympy.sets.sets import (Complement, DisjointUnion, FiniteSet, Interval,
+                             ProductSet, Union)
 from sympy.solvers.solvers import solve
 from sympy.testing.pytest import raises, slow
 from sympy.utilities.lambdify import lambdify
@@ -883,6 +885,25 @@ def test_as_expr_set_pairs_contains():
                       Contains(x, Interval(0, y))):
         p = Piecewise((6, condition), (7, True))
         raises(NotImplementedError, lambda: p.as_expr_set_pairs())
+
+
+def test_as_expr_set_pairs_complex_contains():
+    target = Complement(S.Complexes, FiniteSet(I))
+    p = Piecewise((6, Contains(x, target)), (7, True))
+    assert p.as_expr_set_pairs() == [(6, S.Reals)]
+    target = Complement(S.Complexes, FiniteSet(I), evaluate=False)
+    p = Piecewise((6, Contains(x, target)), (7, True))
+    assert p.as_expr_set_pairs() == [(6, S.Reals)]
+
+    disk = ComplexRegion(Interval(0, 1)*Interval(0, 2*pi), polar=True)
+    p = Piecewise((6, Contains(x, disk)), (7, True))
+    assert p.as_expr_set_pairs() == [
+        (6, Interval(-1, 1)),
+        (7, Union(Interval.open(-oo, -1), Interval.open(1, oo)))]
+    for target in (ProductSet(S.Reals, S.Reals), DisjointUnion(S.Integers)):
+        p = Piecewise((6, Contains(x, target, evaluate=False)), (7, True))
+        error = raises(NotImplementedError, lambda: p.as_expr_set_pairs())
+        assert 'scalar numeric membership sets' in str(error.value)
 
 
 def test_S_srepr_is_identity():

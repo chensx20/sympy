@@ -71,8 +71,8 @@ class Contains(BooleanFunction):
         if s.free_symbols:
             raise NotImplementedError(
                 'as_set is not implemented for parameterized membership sets')
-        # Complexes has no args for its inherited _kind; EmptySet has no elements.
-        if s not in (S.Complexes, S.EmptySet) and s.kind != SetKind(NumberKind):
+        # EmptySet has no element kind.
+        if s is not S.EmptySet and s.kind != SetKind(NumberKind):
             raise NotImplementedError(
                 'as_set is only implemented for scalar numeric membership sets')
         return s.intersect(S.Reals)

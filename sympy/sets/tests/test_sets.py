@@ -1628,7 +1628,19 @@ def test_SetKind_Unions():
 def test_SetKind_DisjointUnion():
     A = FiniteSet(1, 2, 3)
     B = Interval(0, 5)
-    assert DisjointUnion(A, B).kind is SetKind(NumberKind)
+    numeric_pair = SetKind(TupleKind(NumberKind, NumberKind))
+    assert DisjointUnion(A, B).kind is numeric_pair
+    assert DisjointUnion(A, EmptySet).kind is numeric_pair
+    assert DisjointUnion(EmptySet, B).kind is numeric_pair
+    assert DisjointUnion().kind is SetKind()
+    assert DisjointUnion(EmptySet, EmptySet).kind is SetKind()
+    matrices = FiniteSet(Matrix([1, 2]))
+    assert DisjointUnion(matrices).kind is SetKind(TupleKind(MatrixKind(NumberKind), NumberKind))
+    assert DisjointUnion(A, matrices).kind is SetKind(TupleKind(UndefinedKind, NumberKind))
+    assert DisjointUnion(FiniteSet(1, Matrix([1, 2]))).kind is SetKind(TupleKind(UndefinedKind, NumberKind))
+    assert DisjointUnion(A*B).kind is SetKind(TupleKind(TupleKind(NumberKind, NumberKind), NumberKind))
+    assert DisjointUnion(FiniteSet(A)).kind is SetKind(TupleKind(SetKind(NumberKind), NumberKind))
+    assert Union(A, DisjointUnion(B), evaluate=False).kind is SetKind(UndefinedKind)
 
 def test_SetKind_evaluate_False():
     U = lambda *args: Union(*args, evaluate=False)

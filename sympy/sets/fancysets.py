@@ -1323,7 +1323,7 @@ class ComplexRegion(Set):
         return self.sets._measure
 
     def _kind(self):
-        return self.args[0].kind
+        return SetKind(NumberKind)
 
     @classmethod
     def from_real(cls, sets):
