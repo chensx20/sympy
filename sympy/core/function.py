@@ -507,9 +507,12 @@ class Function(Application, Expr):
             func = getattr(mpmath, fname)
         except (AttributeError, KeyError):
             try:
-                return Float(self._imp_(*self.args), prec)
+                result = sympify(self._imp_(*self.args))
+                if result.is_number:
+                    return result._evalf(prec)
             except (AttributeError, TypeError, ValueError):
                 return
+            return
 
         # Convert all args to mpf or mpc
         # Convert the arguments to *higher* precision than requested for the
