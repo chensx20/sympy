@@ -3,9 +3,10 @@ import tempfile
 import os
 from sympy import symbols, Eq, Mod
 from sympy.external import import_module
+from sympy.matrices import MatrixSymbol
 from sympy.tensor import IndexedBase, Idx
 from sympy.utilities.autowrap import autowrap, ufuncify, CodeWrapError
-from sympy.utilities.pytest import skip
+from sympy.utilities.pytest import raises, skip
 
 numpy = import_module('numpy', min_module_version='1.6.1')
 Cython = import_module('Cython', min_module_version='0.15.1')
@@ -214,6 +215,37 @@ def test_issue_15337_f95_f2py():
     runtest_issue_15337('f95', 'f2py')
 
 # Cython
+
+
+def test_autowrap_unused_matrix_c_cython():
+    has_module('Cython')
+    has_module('numpy')
+    x = MatrixSymbol('x', 2, 1)
+    f = autowrap(1.0, args=(x,), backend='cython')
+    assert f(numpy.array([[1.0], [2.0]])) == 1.0
+    assert f(numpy.array([[-3.0], [4.0]])) == 1.0
+    raises(TypeError, lambda: f(1.0))
+
+
+def test_autowrap_unused_matrix_argument_order_c_cython():
+    has_module('Cython')
+    has_module('numpy')
+    x = MatrixSymbol('x', 2, 1)
+    y, z = symbols('y z')
+    array = numpy.array([[1.0], [2.0]])
+    f = autowrap(y + 2*z, args=(z, x, y), backend='cython')
+    assert f(3.0, array, 5.0) == 11.0
+    g = autowrap(y + 2*z, args=(x, y, z), backend='cython')
+    assert g(array, 5.0, 3.0) == 11.0
+
+
+def test_autowrap_used_matrix_c_cython():
+    has_module('Cython')
+    has_module('numpy')
+    x = MatrixSymbol('x', 2, 1)
+    f = autowrap(x[0, 0] + x[1, 0], args=(x,), backend='cython')
+    assert f(numpy.array([[1.0], [2.0]])) == 3.0
+    assert f(numpy.array([[-3.0], [4.0]])) == 1.0
 
 
 def test_wrap_twice_c_cython():
