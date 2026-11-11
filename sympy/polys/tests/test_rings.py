@@ -270,6 +270,70 @@ def test_PolyElement_as_expr():
     R, = ring("", ZZ)
     assert R(3).as_expr() == 3
 
+def test_PolyElement_as_expr_replacements():
+    R, x, y, z = ring("x,y,z", ZZ)
+    f = 3*x**2*y - x*y*z + 7*z**3 + 1
+    original = f.copy()
+    X, Y, Z = R.symbols
+    gens = R.gens
+    U, V, W = symbols("U,V,W")
+
+    expression = f.as_expr(U, V, W)
+    assert expression == 3*U**2*V - U*V*W + 7*W**3 + 1
+    assert expression.free_symbols == {U, V, W}
+    assert f.as_expr(Y, Z, X) == 3*Y**2*Z - Y*Z*X + 7*X**3 + 1
+    assert f.as_expr() == 3*X**2*Y - X*Y*Z + 7*Z**3 + 1
+    assert f == original
+    assert f.ring is R
+    assert R.symbols == (X, Y, Z)
+    assert R.gens == gens
+    assert R.domain == ZZ
+
+def test_PolyElement_as_expr_arity():
+    R, x, y, z = ring("x,y,z", ZZ)
+    U, V, W, T = symbols("U,V,W,T")
+
+    for f in [x + y + z, R.zero, R(3)]:
+        for replacements in [(U, V), (U, V, W, T)]:
+            exc = raises(ValueError, lambda: f.as_expr(*replacements))
+            assert str(exc.value) == "not enough symbols, expected 3 got %s" % len(replacements)
+
+    for f, expected in [(R.zero, 0), (R(3), 3)]:
+        assert f.as_expr(U, V, W) == expected
+        assert f.as_expr() == expected
+
+    R, = ring("", ZZ)
+    for f, expected in [(R.zero, 0), (R(3), 3)]:
+        assert f.as_expr() == expected
+        exc = raises(ValueError, lambda: f.as_expr(U))
+        assert str(exc.value) == "not enough symbols, expected 0 got 1"
+
+def test_PolyElement_as_expr_domains():
+    U, V, t = symbols("U,V,t")
+    R, x, y = ring("x,y", QQ)
+    assert (x/2 + y/3).as_expr(U, V) == U/2 + V/3
+
+    R, x, y = ring("x,y", ZZ[t])
+    f = R.domain.gens[0]*x + y
+    assert f.as_expr(U, V) == t*U + V
+
+def test_PolyElement_as_expr_expressions():
+    R, x, y = ring("x,y", ZZ)
+    U, V = symbols("U,V")
+    f = x**2 + 2*y
+    assert f.as_expr(U + 1, exp(V)) == (U + 1)**2 + 2*exp(V)
+    assert f.as_expr(U, U) == U**2 + 2*U
+
+def test_PolyElement_as_expr_assumptions():
+    X = Symbol("x")
+    U = Symbol("x", positive=True)
+    R, x = ring((X,), ZZ)
+    f = x**2 + x
+    expression = f.as_expr(U)
+    assert expression == U**2 + U
+    assert expression.free_symbols == {U}
+    assert f.as_expr() == X**2 + X
+
 def test_PolyElement_from_expr():
     x, y, z = symbols("x,y,z")
     R, X, Y, Z = ring((x, y, z), ZZ)
