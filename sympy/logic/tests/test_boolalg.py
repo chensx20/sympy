@@ -6,6 +6,7 @@ from sympy.core.singleton import S
 from sympy.core.symbol import (Dummy, symbols)
 from sympy.functions import Piecewise
 from sympy.functions.elementary.trigonometric import cos, sin
+from sympy.sets.contains import Contains
 from sympy.sets.sets import (Interval, Union)
 from sympy.simplify.simplify import simplify
 from sympy.logic.boolalg import (
@@ -876,6 +877,17 @@ def test_bool_as_set():
     raises(NotImplementedError, lambda: (sin(x) < 1).as_set())
     # watch for object morph in as_set
     assert Eq(-1, cos(2*x)**2/sin(2*x)**2).as_set() is S.EmptySet
+
+
+def test_contains_as_set():
+    assert And(Contains(x, S.Reals), x > 0).as_set() == Interval.open(0, oo)
+    assert Not(Contains(x, S.Reals)).as_set() is S.EmptySet
+    assert And(Contains(x, S.Integers), x > 0).as_set() == \
+        S.Integers.intersect(Interval.open(0, oo))
+    with raises(NotImplementedError):
+        And(Contains(x**2, S.Reals), x > 0).as_set()
+    with raises(NotImplementedError):
+        Not(Contains(x + 1, S.Reals)).as_set()
 
 
 @XFAIL

@@ -866,6 +866,25 @@ def test_as_expr_set_pairs():
         [((x - 2)**2, Interval(0, oo)), (0, Interval(-oo, 0, True, True))]
 
 
+def test_as_expr_set_pairs_contains():
+    p = Piecewise((6, Contains(x, S.Reals)), (7, True))
+    assert isinstance(p, Piecewise)
+    assert p.args == ((6, Contains(x, S.Reals)), (7, S.true))
+    assert p.as_expr_set_pairs() == [(6, S.Reals)]
+    assert p.as_expr_set_pairs(Interval(0, 1)) == [(6, Interval(0, 1))]
+    assert p.subs(x, 2) == 6
+    assert p.subs(x, I) == 7
+
+    interval = Interval.Lopen(0, 1)
+    p = Piecewise((6, Contains(x, interval)), (7, True))
+    assert p.as_expr_set_pairs() == [(6, interval), (7, S.Reals - interval)]
+
+    for condition in (Contains(x + 1, S.Reals),
+                      Contains(x, Interval(0, y))):
+        p = Piecewise((6, condition), (7, True))
+        raises(NotImplementedError, lambda: p.as_expr_set_pairs())
+
+
 def test_S_srepr_is_identity():
     p = Piecewise((10, Eq(x, 0)), (12, True))
     q = S(srepr(p))
