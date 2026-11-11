@@ -56,6 +56,60 @@ def test_Routine_argument_order():
     assert [ arg.name for arg in r.arguments ] == [z, x, a, y]
 
 
+def test_Routine_unused_matrix_arguments():
+    n, m = symbols('n m', integer=True, positive=True)
+    for shape in [(2, 1), (1, 1), (n, m)]:
+        A = MatrixSymbol('A', *shape)
+        routine = make_routine('test', 1.0, argument_sequence=[A])
+        arg, = routine.arguments
+        assert isinstance(arg, InputArgument)
+        assert arg.name == A
+        assert arg.dimensions == [(0, extent - 1) for extent in shape]
+        assert arg.get_datatype('C') == 'double'
+        code_gen = CCodeGen()
+        assert code_gen.get_prototype(routine) == 'double test(double *A)'
+        assert 'double test(double *A) {' in get_string(
+            code_gen.dump_c, [routine])
+        assert 'double test(double *A);' in get_string(
+            code_gen.dump_h, [routine])
+
+
+def test_Routine_unused_matrix_argument_order():
+    x, z = symbols('x z')
+    A = MatrixSymbol('A', 2, 1)
+    for args in [(z, A, x), (A, x, z), (x, z, A)]:
+        routine = make_routine('test', x + 1, argument_sequence=args)
+        assert [arg.name for arg in routine.arguments] == list(args)
+        for arg in routine.arguments:
+            assert isinstance(arg, InputArgument)
+            assert arg.get_datatype('C') == 'double'
+            assert arg.dimensions == ([(0, 1), (0, 0)]
+                                      if arg.name == A else None)
+    raises(CodeGenArgumentListError, lambda: make_routine(
+        'test', x + 1, argument_sequence=[A, z]))
+
+
+def test_Routine_used_matrix_arguments():
+    A = MatrixSymbol('A', 2, 1)
+    routine = make_routine('test', A[0, 0], argument_sequence=[A])
+    arg, = routine.arguments
+    assert isinstance(arg, InputArgument)
+    assert arg.name == A
+    assert arg.dimensions == [(0, 1), (0, 0)]
+    assert CCodeGen().get_prototype(routine) == 'double test(double *A)'
+
+
+def test_fcode_unused_matrix_arguments():
+    n, m = symbols('n m', integer=True, positive=True)
+    for shape in [(2, 1), (1, 1), (n, m)]:
+        A = MatrixSymbol('A', *shape)
+        code_gen = FCodeGen()
+        routine = code_gen.routine('test', 1.0, argument_sequence=[A])
+        source = get_string(code_gen.dump_f95, [routine])
+        assert ('REAL*8, intent(in), dimension(1:%s, 1:%s) :: A'
+                % shape) in source
+
+
 def test_empty_c_code():
     code_gen = C89CodeGen()
     source = get_string(code_gen.dump_c, [])

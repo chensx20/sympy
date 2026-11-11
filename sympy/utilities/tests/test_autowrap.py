@@ -7,6 +7,7 @@ import shutil
 
 from sympy.core import symbols, Eq
 from sympy.core.compatibility import StringIO
+from sympy.matrices import MatrixSymbol
 from sympy.utilities.autowrap import (autowrap, binary_function,
             CythonCodeWrapper, UfuncifyCodeWrapper, CodeWrapper)
 from sympy.utilities.codegen import (
@@ -45,6 +46,23 @@ def test_cython_wrapper_scalar_function():
         "def test_c(double x, double y, double z):\n"
         "\n"
         "    return test(x, y, z)")
+    assert source == expected
+
+
+def test_cython_wrapper_unused_matrix():
+    A = MatrixSymbol('A', 2, 1)
+    routine = make_routine('test', 1.0, argument_sequence=[A])
+    code_gen = CythonCodeWrapper(CCodeGen())
+    source = get_string(code_gen.dump_pyx, [routine])
+    expected = (
+        "import numpy as np\n"
+        "cimport numpy as np\n\n"
+        "cdef extern from 'file.h':\n"
+        "    double test(double *A)\n"
+        "\n"
+        "def test_c(np.ndarray[np.double_t, ndim=2] A):\n"
+        "\n"
+        "    return test(<double*> A.data)")
     assert source == expected
 
 
