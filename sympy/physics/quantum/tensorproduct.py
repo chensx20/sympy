@@ -328,11 +328,12 @@ def tensor_product_simp_Mul(e):
     # TODO: This only works for the equivalent of single Qbit gates.
     if not isinstance(e, Mul) or not e.has(TensorProduct):
         return e
-    e = Mul(*[tensor_product_simp(arg)
-              if isinstance(arg, Pow) and arg.has(TensorProduct) else arg
-              for arg in e.args])
-    if not isinstance(e, Mul):
-        return tensor_product_simp(e)
+    normalized = Mul(*[tensor_product_simp(arg)
+                       if isinstance(arg, Pow) and arg.has(TensorProduct)
+                       else arg for arg in e.args])
+    if normalized != e:
+        return tensor_product_simp(normalized)
+    e = normalized
     c_part, nc_part = e.args_cnc()
     if any(isinstance(arg, Pow) and arg.has(TensorProduct)
            for arg in nc_part):
@@ -402,6 +403,11 @@ def tensor_product_simp(e, **hints):
     >>> tensor_product_simp(e**2)
     ((A*C)**2)x((B*D)**2)
 
+    Scalar coefficients are retained when simplifying powers of products:
+
+    >>> tensor_product_simp((2*e)**2)
+    4*((A*C)**2)x((B*D)**2)
+
     Concrete negative integers use formal inverses. As with ordinary powers,
     the zeroth power is the scalar identity, not a tensor product:
 
@@ -417,7 +423,10 @@ def tensor_product_simp(e, **hints):
     if isinstance(e, Add):
         return Add(*[tensor_product_simp(arg) for arg in e.args])
     elif isinstance(e, Pow):
-        return tensor_product_simp(e.base) ** e.exp
+        power = tensor_product_simp(e.base) ** e.exp
+        if isinstance(power, Mul):
+            return tensor_product_simp_Mul(power)
+        return power
     elif isinstance(e, Mul):
         return tensor_product_simp_Mul(e)
     elif isinstance(e, Commutator):

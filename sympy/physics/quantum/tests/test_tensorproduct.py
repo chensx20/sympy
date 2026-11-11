@@ -136,6 +136,48 @@ def test_tensor_product_simp_power_factors():
             evaluate=False)) == TP(A**-2*C, B**-2*A, C**-2*B)
 
 
+def test_tensor_product_simp_power_coefficients():
+    A, B, C, D = symbols('A B C D', commutative=False)
+    left, right = TP(A, B), TP(C, D)
+    for coefficient in (2, -2*x):
+        base = Mul(coefficient, left, right, evaluate=False)
+        for exponent in (2, 3, -1, -2):
+            power = Pow(base, exponent, evaluate=False)
+            powered = TP((A*C)**exponent, (B*D)**exponent)
+            expected = coefficient**exponent*powered
+            assert tensor_product_simp(power) == expected
+            assert tensor_product_simp(expected) == expected
+            for expression, combined in (
+                (Mul(3, power, evaluate=False), 3*expected),
+                (Mul(3, power, right, evaluate=False),
+                 3*coefficient**exponent*TP(
+                     (A*C)**exponent*C, (B*D)**exponent*D)),
+                (Mul(3, right, power, evaluate=False),
+                 3*coefficient**exponent*TP(
+                     C*(A*C)**exponent, D*(B*D)**exponent)),
+            ):
+                assert tensor_product_simp(expression) == combined
+                assert tensor_product_simp_Mul(expression) == combined
+                assert tensor_product_simp(combined) == combined
+    repeated = Mul(3, left, left, evaluate=False)
+    assert tensor_product_simp(repeated) == 3*TP(A**2, B**2)
+    assert tensor_product_simp_Mul(repeated) == 3*TP(A**2, B**2)
+    n = symbols('n', integer=True)
+    for exponent in (S.Half, Float(2), x, n):
+        power = Pow(Mul(2, left, right, evaluate=False),
+                    exponent, evaluate=False)
+        expected = (2*TP(A*C, B*D))**exponent
+        assert tensor_product_simp(power) == expected
+        assert tensor_product_simp(expected) == expected
+        for factors in ((power, right), (right, power)):
+            expression = Mul(3, *factors, evaluate=False)
+            blocked = Mul(3, *[expected if arg == power else arg
+                               for arg in factors])
+            assert tensor_product_simp(expression) == blocked
+            assert tensor_product_simp_Mul(expression) == blocked
+            assert tensor_product_simp(blocked) == blocked
+
+
 def test_tensor_product_simp_power_blocked():
     n = symbols('n', integer=True)
     left, right = TP(A, B), TP(B, C)
