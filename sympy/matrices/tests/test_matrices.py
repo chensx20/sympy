@@ -2235,6 +2235,75 @@ def test_col_insert():
         assert flatten(zeros(3).col_insert(i, c4).row(0).tolist()) == l
 
 
+def test_col_insert_identity():
+    expected = Matrix([
+        [1, 0, 0, 2, 2, 0, 0, 0],
+        [0, 1, 0, 2, 2, 0, 0, 0],
+        [0, 0, 1, 2, 2, 0, 0, 0],
+        [0, 0, 0, 2, 2, 1, 0, 0],
+        [0, 0, 0, 2, 2, 0, 1, 0],
+        [0, 0, 0, 2, 2, 0, 0, 1]])
+    for cls in classes:
+        m = cls(eye(6))
+        other = 2*ones(6, 2)
+        result = m.col_insert(3, other)
+        assert result == expected
+        assert result.shape == (6, 8)
+        assert type(result) is cls
+        assert m == eye(6)
+        assert other == 2*ones(6, 2)
+
+
+def test_col_insert_rectangular():
+    for cls in classes:
+        m = cls([[11, 12, 13], [21, 22, 23]])
+        for other_cls in classes:
+            other = other_cls([[91, 92], [81, 82]])
+            assert m.col_insert(1, other) == Matrix([
+                [11, 91, 92, 12, 13], [21, 81, 82, 22, 23]])
+            assert m.col_insert(2, other) == Matrix([
+                [11, 12, 91, 92, 13], [21, 22, 81, 82, 23]])
+
+
+def test_col_insert_positions():
+    rows = [[11, 12, 13], [21, 22, 23]]
+    inserted = [[91, 92], [81, 82]]
+    for cls in classes:
+        m = cls(rows)
+        for other_cls in classes:
+            for width in (0, 1, 2):
+                other = other_cls(2, width, lambda i, j: inserted[i][j])
+                for pos in (-5, -3, -2, -1, 0, 1, 2, 3, 5):
+                    index = max(0, min(3, pos + 3 if pos < 0 else pos))
+                    expected = Matrix([
+                        row[:index] + block[:width] + row[index:]
+                        for row, block in zip(rows, inserted)])
+                    result = m.col_insert(pos, other)
+                    assert result == expected
+                    assert result.shape == (2, 3 + width)
+                    assert type(result) is cls
+                    assert m == Matrix(rows)
+                    assert other == Matrix(2, width,
+                                           lambda i, j: inserted[i][j])
+                    if width == 0:
+                        assert result == m
+
+
+def test_col_insert_shape_and_empty():
+    for cls in classes:
+        m = cls([[11, 12, 13], [21, 22, 23]])
+        for other_cls in classes:
+            other = other_cls([[91, 92]])
+            raises(ShapeError, lambda: m.col_insert(1, other))
+            empty = cls(0, 0, [])
+            result = empty.col_insert(42, other)
+            assert result == other
+            assert type(result) is cls
+            assert empty.shape == (0, 0)
+            assert m == Matrix([[11, 12, 13], [21, 22, 23]])
+            assert other == Matrix([[91, 92]])
+
+
 def test_normalized():
     assert Matrix([3, 4]).normalized() == \
         Matrix([Rational(3, 5), Rational(4, 5)])
