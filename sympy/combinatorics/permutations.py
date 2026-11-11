@@ -857,19 +857,19 @@ class Permutation(Basic):
         #g) (Permutation) = adjust size or return copy
         ok = True
         if not args:  # a
-            return _af_new(list(range(size or 0)))
+            return cls._af_new(list(range(size or 0)))
         elif len(args) > 1:  # c
-            return _af_new(Cycle(*args).list(size))
+            return cls._af_new(Cycle(*args).list(size))
         if len(args) == 1:
             a = args[0]
             if isinstance(a, Perm):  # g
-                if size is None or size == a.size:
+                if isinstance(a, cls) and (size is None or size == a.size):
                     return a
-                return Perm(a.array_form, size=size)
+                return cls(a.array_form, size=size)
             if isinstance(a, Cycle):  # f
-                return _af_new(a.list(size))
+                return cls._af_new(a.list(size))
             if not is_sequence(a):  # b
-                return _af_new(list(range(a + 1)))
+                return cls._af_new(list(range(a + 1)))
             if has_variety(is_sequence(ai) for ai in a):
                 ok = False
         else:
@@ -924,8 +924,8 @@ class Permutation(Basic):
         obj._size = size
         return obj
 
-    @staticmethod
-    def _af_new(perm):
+    @classmethod
+    def _af_new(cls, perm):
         """A method to produce a Permutation object from a list;
         the list is bound to the _array_form attribute, so it must
         not be modified; this method is meant for internal use only;
@@ -944,7 +944,7 @@ class Permutation(Basic):
         Permutation([2, 1, 3, 0])
 
         """
-        p = Basic.__new__(Perm, perm)
+        p = Basic.__new__(cls, perm)
         p._array_form = perm
         p._size = len(perm)
         return p
@@ -1499,7 +1499,7 @@ class Permutation(Basic):
             ic.sort(key=lambda x: key(x[0]))
         else:
             ic.sort()
-        return ~Permutation([i[1] for i in ic])
+        return self._af_new(_af_invert([i[1] for i in ic]))
 
     def __invert__(self):
         """
@@ -1661,7 +1661,7 @@ class Permutation(Basic):
         n = int(n)
         r = r % ifac(n)
         _unrank1(n, r, id_perm)
-        return _af_new(id_perm)
+        return self._af_new(id_perm)
 
     def rank_nonlex(self, inv_perm=None):
         """
@@ -2423,7 +2423,7 @@ class Permutation(Basic):
                     perm[i] = perm[i - 1]
                 perm[k] = j - 1
             r2 = r1
-        return _af_new(perm)
+        return self._af_new(perm)
 
     def next_trotterjohnson(self):
         """
@@ -2707,7 +2707,7 @@ class Permutation(Basic):
                 Q.append(Q.popleft())
             perm.append(Q.popleft())
         perm.extend(list(Q))
-        return Perm(perm)
+        return self(perm)
 
     @classmethod
     def from_inversion_vector(self, inversion):
@@ -2734,7 +2734,7 @@ class Permutation(Basic):
         except IndexError:
             raise ValueError("The inversion vector is not valid.")
         perm.extend(N)
-        return _af_new(perm)
+        return self._af_new(perm)
 
     @classmethod
     def random(self, n):
@@ -2753,7 +2753,7 @@ class Permutation(Basic):
         """
         perm_array = list(range(n))
         random.shuffle(perm_array)
-        return _af_new(perm_array)
+        return self._af_new(perm_array)
 
     @classmethod
     def unrank_lex(self, size, rank):
@@ -2787,7 +2787,7 @@ class Permutation(Basic):
                 if perm_array[j] > d - 1:
                     perm_array[j] += 1
             psize = new_psize
-        return _af_new(perm_array)
+        return self._af_new(perm_array)
 
     # global flag to control how permutations are printed
     # when True, Permutation([0, 2, 1, 3]) -> Cycle(1, 2)
