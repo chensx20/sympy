@@ -94,6 +94,25 @@ def test_FracElement_as_expr():
 
     raises(ValueError, lambda: f.as_expr(X))
 
+def test_FracElement_as_expr_replacements():
+    F, x, y, z = field("x,y,z", ZZ)
+    f = (3*x**2*y - x*y*z)/(7*z**3 + 1)
+    numer, denom = f.numer.copy(), f.denom.copy()
+    X, Y, Z = F.symbols
+    U, V, W = symbols("U,V,W")
+
+    expression = f.as_expr(U, V, W)
+    assert expression == (3*U**2*V - U*V*W)/(7*W**3 + 1)
+    assert expression.free_symbols == {U, V, W}
+    assert f.as_expr(Y, Z, X) == (3*Y**2*Z - Y*Z*X)/(7*X**3 + 1)
+    assert f.as_expr() == (3*X**2*Y - X*Y*Z)/(7*Z**3 + 1)
+    assert f.numer == numer
+    assert f.denom == denom
+    assert f.field is F
+    assert F.symbols == (X, Y, Z)
+    raises(ValueError, lambda: f.as_expr(U, V))
+    raises(ValueError, lambda: f.as_expr(U, V, W, X))
+
 def test_FracElement_from_expr():
     x, y, z = symbols("x,y,z")
     F, X, Y, Z = field((x, y, z), ZZ)
