@@ -92,7 +92,12 @@ def test_FracElement_as_expr():
     assert f != g
     assert f.as_expr(X, Y, Z) == g
 
-    raises(ValueError, lambda: f.as_expr(X))
+    U, V, W = symbols("u,v,w")
+    assert f.as_expr(U, V, W) == (3*U**2*V - U*V*W)/(7*W**3 + 1)
+    assert f.as_expr(W, V, U) == (3*W**2*V - W*V*U)/(7*U**3 + 1)
+    assert f.as_expr() == g
+    raises(ValueError, lambda: f.as_expr(U, V))
+    raises(ValueError, lambda: f.as_expr(U, V, W, X))
 
 def test_FracElement_from_expr():
     x, y, z = symbols("x,y,z")
