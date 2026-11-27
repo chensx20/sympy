@@ -85,7 +85,7 @@ def test_Min():
     assert Min(p, p_).func is Min
 
     # lists
-    raises(ValueError, lambda: Min())
+    assert Min() == oo
     assert Min(x, y) == Min(y, x)
     assert Min(x, y, z) == Min(z, y, x)
     assert Min(x, Min(y, z)) == Min(z, y, x)
@@ -156,7 +156,7 @@ def test_Max():
 
     # lists
 
-    raises(ValueError, lambda: Max())
+    assert Max() == -oo
     assert Max(x, y) == Max(y, x)
     assert Max(x, y, z) == Max(z, y, x)
     assert Max(x, Max(y, z)) == Max(z, y, x)
