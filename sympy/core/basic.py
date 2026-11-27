@@ -492,11 +492,17 @@ class Basic(Printable, metaclass=ManagedProperties):
         if types:
             types = tuple(
                 [t if isinstance(t, type) else type(t) for t in types])
-        nodes = _preorder_traversal(self)
+        nodes = []
+        stack = [self]
+        while stack:
+            node = stack.pop()
+            nodes.append(node)
+            if not node.is_Atom:
+                stack.extend(reversed(node.args))
         if types:
             result = {node for node in nodes if isinstance(node, types)}
         else:
-            result = {node for node in nodes if not node.args}
+            result = {node for node in nodes if node.is_Atom or not node.args}
         return result
 
     @property

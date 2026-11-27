@@ -132,6 +132,7 @@ from collections import defaultdict
 
 from sympy.core.relational import (Ge, Gt, Le, Lt)
 from sympy.core import Symbol, Tuple, Dummy
+from sympy.core.symbol import Str
 from sympy.core.basic import Basic
 from sympy.core.expr import Expr
 from sympy.core.numbers import Float, Integer, oo
@@ -208,6 +209,10 @@ class Token(CodegenAST):
             else:
                 return cls._get_constructor(attr)(arg)
 
+    @classmethod
+    def _basic_arg(cls, attr, value):
+        return value
+
     def __new__(cls, *args, **kwargs):
         # Pass through existing instances when given as sole argument
         if len(args) == 1 and not kwargs and isinstance(args[0], cls):
@@ -243,7 +248,8 @@ class Token(CodegenAST):
 
         # Parent constructor
         basic_args = [
-            val for attr, val in zip(cls.__slots__, attrvals)
+            cls._basic_arg(attr, val)
+            for attr, val in zip(cls.__slots__, attrvals)
             if attr not in cls.not_in_args
         ]
         obj = CodegenAST.__new__(cls, *basic_args)
@@ -895,11 +901,18 @@ class String(Token):
 
     """
     __slots__ = ('text',)
-    not_in_args = ['text']
     is_Atom = True
 
     @classmethod
+    def _basic_arg(cls, attr, value):
+        if attr == 'text':
+            return Str(value)
+        return value
+
+    @classmethod
     def _construct_text(cls, text):
+        if isinstance(text, Str):
+            text = text.name
         if not isinstance(text, str):
             raise TypeError("Argument text is not a string type.")
         return text
