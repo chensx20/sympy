@@ -38,6 +38,8 @@ def test_super_sub_unicode_names():
     assert split_super_sub("\u03b2001") == ("\u03b2", [], ["001"])
     assert split_super_sub("\u03b1\u03b212") == ("\u03b1\u03b2", [], ["12"])
     assert split_super_sub("\u03c90_1^2") == ("\u03c9", ["2"], ["0", "1"])
+    assert split_super_sub("\u00b20") == ("\u00b20", [], [])
+    assert split_super_sub("\u21680") == ("\u21680", [], [])
     assert split_super_sub("x12") == ("x", [], ["12"])
     assert split_super_sub("x_12") == ("x", [], ["12"])
     assert split_super_sub("123") == ("123", [], [])

@@ -63,7 +63,7 @@ def split_super_sub(text):
     # make a little exception when a name ends with digits, i.e. treat them
     # as a subscript too.
     m = _name_with_digits_p.match(name)
-    if m:
+    if m and m.group(1).isalpha():
         name, sub = m.groups()
         subs.insert(0, sub)
 
