@@ -1625,6 +1625,9 @@ class Rational(Number):
             q = 1
             gcd = 1
 
+        if not isinstance(q, SYMPY_INTS):
+            q = Rational(q)
+
         if not isinstance(p, SYMPY_INTS):
             p = Rational(p)
             q *= p.q
