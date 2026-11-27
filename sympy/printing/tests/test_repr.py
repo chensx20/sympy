@@ -99,6 +99,20 @@ def test_list():
     sT([x, Integer(4)], "[Symbol('x'), Integer(4)]")
 
 
+def test_dict():
+    sT({}, "{}")
+    sT({x: y}, "{Symbol('x'): Symbol('y')}")
+    sT({x: y, y: x}, "{Symbol('x'): Symbol('y'), Symbol('y'): Symbol('x')}")
+    sT({x: [y, {y: x}]},
+       "{Symbol('x'): [Symbol('y'), {Symbol('y'): Symbol('x')}]}")
+
+
+def test_set():
+    sT(set(), "set()")
+    sT({x}, "{Symbol('x')}")
+    assert eval(srepr({x, y}), ENV) == {x, y}
+
+
 def test_Matrix():
     for cls, name in [(Matrix, "MutableDenseMatrix"), (ImmutableDenseMatrix, "ImmutableDenseMatrix")]:
         sT(cls([[x**+1, 1], [y, x + y]]),
