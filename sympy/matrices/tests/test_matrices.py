@@ -2234,6 +2234,15 @@ def test_col_insert():
         l.insert(i, 4)
         assert flatten(zeros(3).col_insert(i, c4).row(0).tolist()) == l
 
+    assert eye(6).col_insert(3, ones(6, 2)*2) == Matrix([
+        [1, 0, 0, 2, 2, 0, 0, 0],
+        [0, 1, 0, 2, 2, 0, 0, 0],
+        [0, 0, 1, 2, 2, 0, 0, 0],
+        [0, 0, 0, 2, 2, 1, 0, 0],
+        [0, 0, 0, 2, 2, 0, 1, 0],
+        [0, 0, 0, 2, 2, 0, 0, 1],
+    ])
+
 
 def test_normalized():
     assert Matrix([3, 4]).normalized() == \
