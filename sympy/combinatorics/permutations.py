@@ -314,7 +314,7 @@ class Cycle(dict):
             yield i
 
     def __call__(self, *other):
-        """Return product of cycles processed from R to L.
+        """Return product of cycles processed from left to right.
 
         Examples
         ========
@@ -550,6 +550,15 @@ class Permutation(Basic):
     Permutation([0, 3, 2, 1])
     >>> _ == Permutation([[1, 2]])*Permutation([[1, 3]])*Permutation([[2, 3]])
     True
+
+    Cycles in a nested list are applied from left to right and may overlap.
+    Repeated elements within a single cycle are invalid, as are repeated
+    entries in array form:
+
+    >>> Permutation([[0, 1], [1, 2]])
+    Permutation([2, 0, 1])
+    >>> Permutation([[0, 1], [0, 1]])
+    Permutation([0, 1])
 
     Entering a singleton in a permutation is a way to indicate the size of the
     permutation. The ``size`` keyword can also be used.
@@ -895,12 +904,12 @@ class Permutation(Basic):
         # counting starts from 1.
 
         temp = flatten(args)
-        if has_dups(temp):
-            if is_cycle:
+        if is_cycle:
+            if any(has_dups(c) for c in args):
                 raise ValueError('there were repeated elements; to resolve '
                 'cycles use Cycle%s.' % ''.join([str(tuple(c)) for c in args]))
-            else:
-                raise ValueError('there were repeated elements.')
+        elif has_dups(temp):
+            raise ValueError('there were repeated elements.')
         temp = set(temp)
 
         if not is_cycle and \

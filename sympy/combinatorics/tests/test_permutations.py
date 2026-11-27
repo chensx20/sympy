@@ -349,7 +349,25 @@ def test_args():
     raises(ValueError, lambda: Permutation([[1, 2], 0]))
            # enclosing brackets needed on 0
     raises(ValueError, lambda: Permutation([1, 1, 0]))
-    raises(ValueError, lambda: Permutation([[1], [1, 2]]))
+    assert Permutation([[1], [1, 2]]).array_form == [0, 2, 1]
+    assert Permutation([[0, 1], [0, 1]]).array_form == [0, 1]
+    assert Permutation([[0, 1], [1, 2]]).array_form == [2, 0, 1]
+    assert Permutation([[1, 2], [0, 1]]).array_form == [1, 2, 0]
+    assert Permutation([[0, 1], [1, 2], [2, 3]]).array_form == [3, 0, 1, 2]
+    assert Permutation([[3, 4], [3, 4]]).array_form == [0, 1, 2, 3, 4]
+    assert Permutation([[0, 1], [0, 1]], size=4).array_form == [0, 1, 2, 3]
+    assert Permutation([[0, 1], [0, 1]], size=1).array_form == [0, 1]
+    assert Permutation([[0, 1], [0, 1], [4]]).array_form == [0, 1, 2, 3, 4]
+    cycles = [(0, 1), (1, 2)]
+    assert Permutation(cycles).array_form == [2, 0, 1]
+    assert cycles == [(0, 1), (1, 2)]
+    assert Permutation([[0, 1], [1, 2]]) == \
+        Permutation([[0, 1]])*Permutation([[1, 2]])
+    assert Permutation([[0, 1], [1, 2]]) == \
+        Permutation(Cycle(0, 1)(1, 2))
+    raises(ValueError, lambda: Permutation([[0, 1, 0]]))
+    raises(ValueError, lambda: Permutation([[2, 3], [0, 1, 0]]))
+    raises(ValueError, lambda: Permutation([[-1, 0]]))
     raises(ValueError, lambda: Permutation([4, 5], size=10))  # where are 0-3?
     # but this is ok because cycles imply that only those listed moved
     assert Permutation(4, 5) == Permutation([0, 1, 2, 3, 5, 4])
