@@ -536,7 +536,14 @@ factors (not necessarily irreducible) of degree 1, 2 etc.::
     >>> f = 2*x**2 + 5*x**3 + 4*x**4 + x**5
 
     >>> sqf_list(f)
-    (1, [(x + 2, 1), (x, 2), (x + 1, 2)])
+                    2
+    (1, [(x + 2, 1), (x  + x, 2)])
+
+Factors with the same multiplicity are combined in the returned list::
+
+    >>> sqf_list((x**2 + 1)*(x - 1)**2*(x - 2)**3*(x - 3)**3)
+               2                        2
+    (1, [(x  + 1, 1), (x - 1, 2), (x  - 5*x + 6, 3)])
 
     >>> sqf(f)
      2        2
