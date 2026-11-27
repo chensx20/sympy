@@ -115,6 +115,8 @@ _between_two_numbers_p = (
     re.compile(r'[0-9][} ]*$'),  # search
     re.compile(r'[{ ]*[-+0-9]'),  # match
 )
+_spacing_only_p = re.compile(
+    r'^(?:\s|\\[,;:!]|\\ |\\quad|\\qquad)*$')
 
 
 class LatexPrinter(Printer):
@@ -156,11 +158,19 @@ class LatexPrinter(Printer):
             "times": r" \times "
         }
 
-        self._settings['mul_symbol_latex'] = \
-            mul_symbol_table[self._settings['mul_symbol']]
-
-        self._settings['mul_symbol_latex_numbers'] = \
-            mul_symbol_table[self._settings['mul_symbol'] or 'dot']
+        mul_symbol = self._settings['mul_symbol']
+        if mul_symbol in mul_symbol_table:
+            self._settings['mul_symbol_latex'] = \
+                mul_symbol_table[mul_symbol]
+            self._settings['mul_symbol_latex_numbers'] = \
+                mul_symbol_table[mul_symbol or 'dot']
+        else:
+            self._settings['mul_symbol_latex'] = mul_symbol
+            if _spacing_only_p.match(mul_symbol):
+                self._settings['mul_symbol_latex_numbers'] = \
+                    mul_symbol_table['dot']
+            else:
+                self._settings['mul_symbol_latex_numbers'] = mul_symbol
 
         self._delim_dict = {'(': ')', '[': ']'}
 
@@ -2155,7 +2165,20 @@ def latex(expr, **settings):
     \frac{1}{2 \pi} \int r\, dr
 
     mul_symbol: The symbol to use for multiplication. Can be one of None,
-    "ldot", "dot", or "times".
+    "ldot", "dot", or "times", or an arbitrary literal LaTeX string. The
+    named values preserve their existing behavior. Custom strings are used
+    verbatim, without adding spaces or escaping them.
+
+    Numeric factors are separated by ``\cdot`` when the custom string is
+    empty or contains only recognized spacing tokens. Other custom strings
+    are also used between numeric factors. The recognized spacing tokens are
+    whitespace, ``\,``, ``\:``, ``\;``, ``\!``, ``\ ``, ``\quad``, and
+    ``\qquad``. This classification is deliberately narrow; custom macros
+    and other spacing commands are treated as literal separators. A control
+    word must include its own terminating delimiter when needed.
+
+    >>> print(latex(2*x, mul_symbol=r"\,"))
+    2\,x
 
     >>> print(latex((2*tau)**sin(Rational(7,2)), mul_symbol="times"))
     \left(2 \times \tau\right)^{\sin{\left (\frac{7}{2} \right )}}
