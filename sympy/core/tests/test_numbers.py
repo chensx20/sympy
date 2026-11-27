@@ -341,6 +341,9 @@ def test_Rational_new():
     assert Rational('.76').limit_denominator(4) == n3_4
     assert Rational(19, 25).limit_denominator(4) == n3_4
     assert Rational('19/25').limit_denominator(4) == n3_4
+    assert Rational('0.5', '100') == Rational(1, 200)
+    assert Rational('0.5', 100) == Rational(1, 200)
+    assert Rational(0.5, '100') == Rational(1, 200)
     assert Rational(1.0, 3) == Rational(1, 3)
     assert Rational(1, 3.0) == Rational(1, 3)
     assert Rational(Float(0.5)) == S.Half
