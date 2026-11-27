@@ -795,6 +795,11 @@ def test_presentation_symbol_styles_and_names():
         '<msub><mi>x</mi><mi>2</mi></msub>'
 
 
+def test_presentation_symbol_disable_split_super_sub():
+    printer = MathMLPresentationPrinter({'disable_split_super_sub': True})
+    assert printer.doprint(Symbol('x2')) == '<mi>x2</mi>'
+
+
 def test_presentation_mathml_greek():
     mml = mpp._print(Symbol('alpha'))
     assert mml.nodeName == 'mi'
