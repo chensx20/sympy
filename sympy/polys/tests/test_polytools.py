@@ -645,6 +645,12 @@ def test_Poly_add():
     assert Poly(x, x) + 1 == Poly(x + 1, x)
     assert 1 + Poly(x, x) == Poly(x + 1, x)
 
+    result = x + Poly(x, x)
+    assert type(result) == Poly
+    assert result == Poly(2*x, x)
+    assert result.gens == (x,)
+    assert result.domain == ZZ
+
 
 def test_Poly_sub():
     assert Poly(0, x).sub(Poly(0, x)) == Poly(0, x)
@@ -661,6 +667,12 @@ def test_Poly_sub():
     assert Poly(x, x) - 1 == Poly(x - 1, x)
     assert 1 - Poly(x, x) == Poly(1 - x, x)
 
+    result = x - Poly(x, x)
+    assert type(result) == Poly
+    assert result == Poly(0, x)
+    assert result.gens == (x,)
+    assert result.domain == ZZ
+
 
 def test_Poly_mul():
     assert Poly(0, x).mul(Poly(0, x)) == Poly(0, x)
@@ -676,6 +688,56 @@ def test_Poly_mul():
 
     assert Poly(x, x) * 2 == Poly(2*x, x)
     assert 2 * Poly(x, x) == Poly(2*x, x)
+
+    assert Poly(x, x) * x == Poly(x**2, x)
+    assert x * Poly(x, x) == Poly(x**2, x)
+    assert -2 * Poly(x, x) == Poly(-2*x, x)
+    assert S(-2) * Poly(x, x) == Poly(-2*x, x)
+    assert Poly(x, x) * S(-2) == Poly(-2*x, x)
+
+    f = Poly(x, x)
+
+    for scalar, coefficient, domain in [
+        (-2, -2, ZZ),
+        (S(-2), -2, ZZ),
+        (S(2), 2, ZZ),
+        (S.NegativeOne, -1, ZZ),
+        (S.One, 1, ZZ),
+        (S.Zero, 0, ZZ),
+        (Rational(1, 2), Rational(1, 2), QQ),
+    ]:
+        for result in (scalar*f, f*scalar):
+            assert type(result) == Poly
+            assert result.as_expr() == coefficient*x
+            assert result.gens == (x,)
+            assert result.domain == domain
+
+    result = (x + y)*Poly(x + y, y, x)
+    assert type(result) == Poly
+    assert result == Poly((x + y)**2, y, x)
+    assert result.gens == (y, x)
+    assert result.domain == ZZ
+
+    result = (x + y)*Poly(x + y, y, x, domain=QQ)
+    assert type(result) == Poly
+    assert result.gens == (y, x)
+    assert result.domain == QQ
+
+    result = Rational(1, 2)*f
+    assert type(result) == Poly
+    assert result == Poly(x/2, x, domain=QQ)
+    assert result.gens == (x,)
+    assert result.domain == QQ
+
+    result = sin(x)*f
+    assert type(result) == Mul
+    assert result == x*sin(x)
+
+    result = x*PurePoly(x, x)
+    assert type(result) == PurePoly
+    assert result == PurePoly(x**2, x)
+    assert result.gens == (x,)
+    assert result.domain == ZZ
 
 
 def test_Poly_sqr():
