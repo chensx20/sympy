@@ -1,7 +1,7 @@
 from sympy.sets import (ConditionSet, Intersection, FiniteSet,
     EmptySet, Union, Contains)
 from sympy import (Symbol, Eq, S, Abs, sin, pi, Interval,
-    And, Mod, oo, Function)
+    And, Mod, oo, Function, Rational, Lambda, asin, ImageSet)
 from sympy.testing.pytest import raises, XFAIL, warns_deprecated_sympy
 
 
@@ -125,9 +125,23 @@ def test_subs_CondSet():
     assert ConditionSet(
         n, n < x, Interval(0, oo)).subs(x, p) == Interval(0, oo)
     assert ConditionSet(
-        n, n < x, Interval(-oo, 0)).subs(x, p) == S.EmptySet
+        n, n < x, Interval(-oo, 0)).subs(x, p) == Interval(-oo, 0)
     assert ConditionSet(f(x), f(x) < 1, {w, z}
         ).subs(f(x), y) == ConditionSet(y, y < 1, {w, z})
+
+
+def test_subs_CondSet_true_false_condition():
+    condition = ConditionSet(x, y > 0, S.Integers)
+    assert condition.subs(y, 1) == S.Integers
+    assert condition.subs(y, -1) is S.EmptySet
+
+
+def test_subs_CondSet_imageset():
+    n = Symbol('n')
+    image = ImageSet(Lambda(n, 2*n*pi + asin(y)), S.Integers)
+    condition = ConditionSet(x, Contains(y, Interval(-1, 1)), image)
+    assert condition.subs(y, Rational(1, 3)) == image.subs(y, Rational(1, 3))
+    assert condition.subs(y, Rational(4, 3)) is S.EmptySet
 
 
 def test_subs_CondSet_tebr():
