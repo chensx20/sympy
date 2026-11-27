@@ -361,6 +361,10 @@ def test_args():
     cycles = [(0, 1), (1, 2)]
     assert Permutation(cycles).array_form == [2, 0, 1]
     assert cycles == [(0, 1), (1, 2)]
+    cycles = [[0, 1], [1, 2]]
+    original_cycles = [cycle[:] for cycle in cycles]
+    assert Permutation(cycles).array_form == [2, 0, 1]
+    assert cycles == original_cycles
     assert Permutation([[0, 1], [1, 2]]) == \
         Permutation([[0, 1]])*Permutation([[1, 2]])
     assert Permutation([[0, 1], [1, 2]]) == \
