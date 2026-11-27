@@ -909,6 +909,11 @@ def test_diophantine_permute_sign():
     soln = set([(-1, -1), (-1, 2), (1, -2), (1, 1)])
     assert diophantine(10*x**2 + 12*x*y + 12*y**2 - 34, permute=True) == soln
 
+    eq = x**4 + y**4 - (2**4 + 3**4)
+    soln = set(signed_permutations((2, 3)))
+    assert diophantine(eq, syms=[y, x], permute=True) == {
+        (y_value, x_value) for x_value, y_value in soln}
+
 
 @XFAIL
 def test_not_implemented():
