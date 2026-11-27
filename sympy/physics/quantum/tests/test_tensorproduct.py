@@ -53,23 +53,43 @@ def test_tensor_product_simp():
 
 def test_tensor_product_power():
     n = symbols('n', integer=True)
+    symbolic_power = TP(A, B)**x
+    integer_power = TP(A, B)**n
     assert TP(1, 1)**2 == TP(1, 1)
     assert TP(1, Pauli(3))**2 == TP(1, 1)
     assert TP(A, B, C)**3 == TP(A**3, B**3, C**3)
     assert TP(A, B)**-2 == TP(A**-2, B**-2)
     assert TP(A, B)**Rational(1, 2) == sqrt(TP(A, B))
-    assert TP(A, B)**x == TP(A, B)**x
-    assert TP(A, B)**n == TP(A, B)**n
+    assert isinstance(symbolic_power, Pow)
+    assert symbolic_power.base == TP(A, B)
+    assert symbolic_power.exp == x
+    assert isinstance(integer_power, Pow)
+    assert integer_power.base == TP(A, B)
+    assert integer_power.exp == n
     assert isinstance(TP(A, B)**Float(2), Pow)
 
 
 def test_tensor_product_power_in_product():
+    n = symbols('n', integer=True)
     power = Pow(TP(A, B), 2, evaluate=False)
     assert tensor_product_simp(3*power*TP(C, A)) == \
         3*TP(A**2*C, B**2*A)
-    assert tensor_product_simp(TP(A, B)*Pow(TP(C, A), x,
-                                            evaluate=False)) == \
-        TP(A, B)*Pow(TP(C, A), x, evaluate=False)
+    symbolic_product = tensor_product_simp(
+        TP(A, B)*Pow(TP(C, A), x, evaluate=False))
+    assert TP(A, B) in symbolic_product.args
+    symbolic_factors = [arg for arg in symbolic_product.args
+                        if isinstance(arg, Pow)]
+    assert len(symbolic_factors) == 1
+    assert symbolic_factors[0].base == TP(C, A)
+    assert symbolic_factors[0].exp == x
+    integer_product = tensor_product_simp(
+        TP(A, B)*Pow(TP(C, A), n, evaluate=False))
+    assert TP(A, B) in integer_product.args
+    integer_factors = [arg for arg in integer_product.args
+                       if isinstance(arg, Pow)]
+    assert len(integer_factors) == 1
+    assert integer_factors[0].base == TP(C, A)
+    assert integer_factors[0].exp == n
     simplified = tensor_product_simp(power*TP(C, A))
     assert tensor_product_simp(simplified) == simplified
 
