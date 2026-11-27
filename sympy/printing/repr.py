@@ -144,6 +144,16 @@ class ReprPrinter(Printer):
     def _print_list(self, expr):
         return "[%s]" % self.reprify(expr, ", ")
 
+    def _print_dict(self, expr):
+        items = ["%s: %s" % (self._print(key), self._print(value))
+                 for key, value in expr.items()]
+        return "{%s}" % ", ".join(items)
+
+    def _print_set(self, expr):
+        if not expr:
+            return "set()"
+        return "{%s}" % self.reprify(expr, ", ")
+
     def _print_MatrixBase(self, expr):
         # special case for some empty matrices
         if (expr.rows == 0) ^ (expr.cols == 0):
