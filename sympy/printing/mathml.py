@@ -31,7 +31,6 @@ class MathMLPrinterBase(Printer):
         "mul_symbol": None,
         "root_notation": True,
         "symbol_names": {},
-        "disable_split_super_sub": False,
     }
 
     def __init__(self, settings=None):
@@ -64,11 +63,6 @@ class MathMLPrinterBase(Printer):
         xmlbstr = unistr.encode('ascii', 'xmlcharrefreplace')
         res = xmlbstr.decode()
         return res
-
-    def _split_super_sub(self, name):
-        if self._settings['disable_split_super_sub']:
-            return name, [], []
-        return split_super_sub(name)
 
     def apply_patch(self):
         # Applying the patch of xml.dom.minidom bug
@@ -365,7 +359,7 @@ class MathMLContentPrinter(MathMLPrinterBase):
             else:
                 return s
 
-        name, supers, subs = self._split_super_sub(sym.name)
+        name, supers, subs = split_super_sub(sym.name)
         name = translate(name)
         supers = [translate(sup) for sup in supers]
         subs = [translate(sub) for sub in subs]
@@ -486,6 +480,14 @@ class MathMLPresentationPrinter(MathMLPrinterBase):
     References: https://www.w3.org/TR/MathML2/chapter3.html
     """
     printmethod = "_mathml_presentation"
+
+    _default_settings = MathMLPrinterBase._default_settings.copy()
+    _default_settings['disable_split_super_sub'] = False
+
+    def _split_super_sub(self, name):
+        if self._settings['disable_split_super_sub']:
+            return name, [], []
+        return split_super_sub(name)
 
     def mathml_tag(self, e):
         """Returns the MathML tag for an expression."""

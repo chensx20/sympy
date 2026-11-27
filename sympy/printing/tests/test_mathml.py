@@ -800,6 +800,12 @@ def test_presentation_symbol_disable_split_super_sub():
     assert printer.doprint(Symbol('x2')) == '<mi>x2</mi>'
 
 
+def test_content_symbol_splits_trailing_digit():
+    assert mp.doprint(Symbol('x2')) == (
+        '<ci><mml:msub><mml:mi>x</mml:mi><mml:mi>2</mml:mi>'
+        '</mml:msub></ci>')
+
+
 def test_presentation_mathml_greek():
     mml = mpp._print(Symbol('alpha'))
     assert mml.nodeName == 'mi'
