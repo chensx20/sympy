@@ -6,7 +6,8 @@ import builtins
 import types
 
 from sympy.assumptions import Q
-from sympy.core import Symbol, Function, Float, Rational, Integer, I, Mul, Pow, Eq
+from sympy.core import (Symbol, Function, Float, Rational, Integer, I, Add,
+                        Mul, Pow, Eq, Ne, Lt, Le, Gt, Ge)
 from sympy.functions import exp, factorial, factorial2, sin, Min, Max
 from sympy.logic import And
 from sympy.series import Limit
@@ -181,6 +182,72 @@ def test_issue_7663():
     e = '2*(x+1)'
     assert parse_expr(e, evaluate=0) == parse_expr(e, evaluate=False)
     assert parse_expr(e, evaluate=0).equals(2*(x+1))
+
+
+def test_issue_24661():
+    x, y, z = Symbol('x'), Symbol('y'), Symbol('z')
+    comparisons = [
+        ('1 < 2', Lt(1, 2, evaluate=False)),
+        ('2 < 1', Lt(2, 1, evaluate=False)),
+        ('1 <= 1', Le(1, 1, evaluate=False)),
+        ('2 <= 1', Le(2, 1, evaluate=False)),
+        ('1 < 1', Lt(1, 1, evaluate=False)),
+        ('2 > 1', Gt(2, 1, evaluate=False)),
+        ('1 > 2', Gt(1, 2, evaluate=False)),
+        ('1 > 1', Gt(1, 1, evaluate=False)),
+        ('1 >= 2', Ge(1, 2, evaluate=False)),
+        ('1 >= 1', Ge(1, 1, evaluate=False)),
+        ('1 == 1', Eq(1, 1, evaluate=False)),
+        ('1 == 2', Eq(1, 2, evaluate=False)),
+        ('1 != 1', Ne(1, 1, evaluate=False)),
+        ('1 != 2', Ne(1, 2, evaluate=False)),
+        ('y > x', Gt(y, x, evaluate=False)),
+        ('x < y', Lt(x, y, evaluate=False)),
+        ('x <= y', Le(x, y, evaluate=False)),
+        ('x > y', Gt(x, y, evaluate=False)),
+        ('x >= y', Ge(x, y, evaluate=False)),
+        ('x == y', Eq(x, y, evaluate=False)),
+        ('x != y', Ne(x, y, evaluate=False)),
+    ]
+    for text, expected in comparisons:
+        assert parse_expr(text, evaluate=False) == expected
+
+    assert str(parse_expr('1 < 2', evaluate=False)) == '1 < 2'
+    assert parse_expr('1 < 2')
+    assert parse_expr('1 < 2', evaluate=True)
+    assert parse_expr('1 < 2', evaluate=0) == Lt(1, 2, evaluate=False)
+
+    assert parse_expr('x < y < z', evaluate=False) == And(
+        Lt(x, y, evaluate=False), Lt(y, z, evaluate=False), evaluate=False)
+    assert parse_expr('1 < x <= 3 < y', evaluate=False) == And(
+        Lt(1, x, evaluate=False), Le(x, 3, evaluate=False),
+        Lt(3, y, evaluate=False), evaluate=False)
+    assert parse_expr('1 < 2 < 3', evaluate=False) == And(
+        Lt(1, 2, evaluate=False), Lt(2, 3, evaluate=False), evaluate=False)
+    assert parse_expr('x == y != z', evaluate=False) == And(
+        Eq(x, y, evaluate=False), Ne(y, z, evaluate=False), evaluate=False)
+
+    assert parse_expr('1 + 2 < sin(x)', evaluate=False) == Lt(
+        Add(1, 2, evaluate=False), sin(x, evaluate=False), evaluate=False)
+    assert parse_expr('sin(x) < 1 + 2', evaluate=False) == Lt(
+        sin(x, evaluate=False), Add(1, 2, evaluate=False), evaluate=False)
+    assert parse_expr('[1 < 2, x < y]', evaluate=False) == [
+        Lt(1, 2, evaluate=False), Lt(x, y, evaluate=False)]
+    assert parse_expr('(x < y) & (y < z)', evaluate=False) == And(
+        Lt(x, y, evaluate=False), Lt(y, z, evaluate=False), evaluate=False)
+
+    def relational(left, right, evaluate=True):
+        return left, right, evaluate
+
+    assert parse_expr('x < y', local_dict={'Lt': relational},
+                      evaluate=False) == (x, y, False)
+
+    for operator in ('in', 'not in', 'is', 'is not'):
+        error = raises(ValueError, lambda: parse_expr(
+            'x %s y' % operator, evaluate=False))
+        assert operator in str(error.value)
+        raises(ValueError, lambda: parse_expr(
+            'x < y %s z' % operator, evaluate=False))
 
 def test_recursive_evaluate_false_10560():
     inputs = {

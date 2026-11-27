@@ -1110,6 +1110,14 @@ class EvaluateFalseTransformer(ast.NodeTransformer):
         ast.BitAnd: 'And',
         ast.BitXor: 'Not',
     }
+    comparisons = {
+        ast.Lt: 'Lt',
+        ast.LtE: 'Le',
+        ast.Gt: 'Gt',
+        ast.GtE: 'Ge',
+        ast.Eq: 'Eq',
+        ast.NotEq: 'Ne',
+    }
     functions = (
         'Abs', 'im', 're', 'sign', 'arg', 'conjugate',
         'acos', 'acot', 'acsc', 'asec', 'asin', 'atan',
@@ -1185,6 +1193,48 @@ class EvaluateFalseTransformer(ast.NodeTransformer):
 
             return new_node
         return node
+
+    def visit_Compare(self, node):
+        unsupported = [type(op) for op in node.ops
+                       if type(op) not in self.comparisons]
+        if unsupported:
+            operator = unsupported[0]
+            names = {
+                ast.In: 'in',
+                ast.NotIn: 'not in',
+                ast.Is: 'is',
+                ast.IsNot: 'is not',
+            }
+            raise ValueError("Unsupported comparison operator: %s" %
+                             names[operator])
+
+        operands = [self.visit(node.left)]
+        operands.extend(self.visit(comparator) for comparator in node.comparators)
+        relations = []
+        for op, left, right in zip(node.ops, operands, operands[1:]):
+            sympy_class = self.comparisons[type(op)]
+            relations.append(ast.Call(
+                func=ast.Name(id=sympy_class, ctx=ast.Load()),
+                args=[left, right],
+                keywords=[ast.keyword(
+                    arg='evaluate',
+                    value=ast.NameConstant(value=False, ctx=ast.Load()))],
+                starargs=None,
+                kwargs=None
+            ))
+
+        if len(relations) == 1:
+            return relations[0]
+
+        return ast.Call(
+            func=ast.Name(id='And', ctx=ast.Load()),
+            args=relations,
+            keywords=[ast.keyword(
+                arg='evaluate',
+                value=ast.NameConstant(value=False, ctx=ast.Load()))],
+            starargs=None,
+            kwargs=None
+        )
 
     def visit_Call(self, node):
         new_node = self.generic_visit(node)
