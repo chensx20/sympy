@@ -5,12 +5,13 @@ from sympy.codegen import Assignment
 from sympy.codegen.ast import none
 from sympy.core import Expr, Mod, symbols, Eq, Le, Gt, zoo, oo, Rational
 from sympy.core.numbers import pi
-from sympy.functions import acos, Piecewise, sign
+from sympy.functions import acos, Piecewise, sign, sin
 from sympy.logic import And, Or
 from sympy.matrices import SparseMatrix, MatrixSymbol
 from sympy.printing.pycode import (
     MpmathPrinter, NumPyPrinter, PythonCodePrinter, pycode, SciPyPrinter
 )
+from sympy.tensor import IndexedBase
 from sympy.utilities.pytest import raises
 
 x, y, z = symbols('x y z')
@@ -34,6 +35,16 @@ def test_PythonCodePrinter():
                         (3, Gt(x, 0)), evaluate=False)) == '((2) if (x <= 0) else'\
                                                         ' (3) if (x > 0) else None)'
     assert prntr.doprint(sign(x)) == '(0.0 if x == 0 else math.copysign(1, x))'
+
+
+def test_pycode_indexed():
+    p = IndexedBase('p')
+    i, j = symbols('i j')
+
+    assert PythonCodePrinter().doprint(p[0]) == 'p[0]'
+    assert pycode(p[i, j]) == 'p[i, j]'
+    assert pycode(p[i + 1, 2*j]) == 'p[i + 1, 2*j]'
+    assert pycode(p[sin(i)]) == 'p[math.sin(i)]'
 
 
 def test_MpmathPrinter():
