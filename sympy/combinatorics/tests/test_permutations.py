@@ -79,6 +79,7 @@ def test_Permutation():
     assert a*~a == I
     assert a*b**-1 == a*~b
 
+
     ans = Permutation(0, 5, 3, 1, 6)(2, 4)
     assert (p + q.rank()).rank() == ans.rank()
     assert (p + q.rank())._rank == ans.rank()
@@ -215,6 +216,48 @@ def test_Permutation():
     b = Permutation(0, 6, 3)(1, 2)
     assert a.cycle_structure == {1: 4}
     assert b.cycle_structure == {2: 1, 3: 1, 1: 2}
+
+
+def test_Permutation_subclassing():
+    class SubPermutation(Permutation):
+        pass
+
+    base = Permutation([1, 0, 2])
+    sub = SubPermutation([0, 2, 1])
+
+    assert type(SubPermutation([1, 0, 2])) is SubPermutation
+    assert type(SubPermutation(base)) is SubPermutation
+    assert SubPermutation(sub) is sub
+    assert type(SubPermutation(1, 2)) is SubPermutation
+    assert type(SubPermutation(Cycle(1, 2))) is SubPermutation
+
+    assert type(sub * base) is SubPermutation
+    assert type(base * sub) is Permutation
+    assert type(SubPermutation.rmul_with_af(sub, base)) is SubPermutation
+    assert type(sub.mul_inv(base)) is SubPermutation
+    assert type(sub**2) is SubPermutation
+    assert type(~sub) is SubPermutation
+    assert type(sub ^ base) is SubPermutation
+    assert type(sub.commutator(base)) is SubPermutation
+    assert type(sub + 1) is SubPermutation
+    assert type(sub.next_lex()) is SubPermutation
+    assert type(sub.next_nonlex()) is SubPermutation
+    assert type(SubPermutation.unrank_lex(3, 2)) is SubPermutation
+    assert type(SubPermutation.unrank_nonlex(3, 2)) is SubPermutation
+    assert type(SubPermutation.unrank_trotterjohnson(3, 2)) is SubPermutation
+    trotter_johnson = SubPermutation.unrank_trotterjohnson(3, 1)
+    assert type(trotter_johnson.next_trotterjohnson()) is SubPermutation
+    assert type(SubPermutation.from_sequence('abc')) is SubPermutation
+    assert type(SubPermutation.from_inversion_vector([1, 0])) is SubPermutation
+    assert type(SubPermutation.josephus(2, 3)) is SubPermutation
+    assert type(SubPermutation.random(3)) is SubPermutation
+
+    original = Permutation
+    try:
+        globals()['Permutation'] = SubPermutation
+        test_Permutation()
+    finally:
+        globals()['Permutation'] = original
 
 
 def test_josephus():
