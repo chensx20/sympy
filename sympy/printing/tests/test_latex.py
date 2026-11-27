@@ -23,8 +23,8 @@ from sympy import (
 from sympy.ntheory.factor_ import udivisor_sigma
 
 from sympy.abc import mu, tau
-from sympy.printing.latex import (latex, translate, greek_letters_set,
-                                  tex_greek_dictionary)
+from sympy.printing.latex import (latex, LatexPrinter, translate,
+                                  greek_letters_set, tex_greek_dictionary)
 from sympy.tensor.array import (ImmutableDenseNDimArray, ImmutableSparseNDimArray,
                                 MutableSparseNDimArray, MutableDenseNDimArray)
 from sympy.tensor.array import tensorproduct
@@ -990,6 +990,43 @@ def test_latex_mul_symbol():
     assert latex(4*x, mul_symbol='times') == "4 \\times x"
     assert latex(4*x, mul_symbol='dot') == "4 \\cdot x"
     assert latex(4*x, mul_symbol='ldot') == r"4 \,.\, x"
+
+    assert latex(3*x**2*y, mul_symbol=r'\,') == r"3\,x^{2}\,y"
+    assert latex(3*x**2*y, mul_symbol='') == r"3x^{2}y"
+    assert latex(3*x**2*y, mul_symbol=r' \star ') == \
+        r"3 \star x^{2} \star y"
+
+    spacing_symbols = ['', ' ', r'\,', r'\:', r'\;', r'\!', r'\ ',
+                       r'\quad', r'\qquad', r' \: \quad ']
+    for symbol in spacing_symbols:
+        assert latex(4*4**x, mul_symbol=symbol) == r"4 \cdot 4^{x}"
+        assert latex(1.5e20*x, mul_symbol=symbol) == \
+            r"1.5 \cdot 10^{20}" + symbol + "x"
+
+    assert latex(4*4**x, mul_symbol=r' \star ') == \
+        r"4 \star 4^{x}"
+    assert latex(1.5e20*x, mul_symbol=r' \star ') == \
+        r"1.5 \star 10^{20} \star x"
+    assert latex(4*4**x, mul_symbol=r'\quadruple ') == \
+        r"4\quadruple 4^{x}"
+    assert latex(Float(1.0e-100), mul_symbol=r'\,') == \
+        r"1.0 \cdot 10^{-100}"
+    assert latex(1/(4*4**x), mul_symbol=r'\,') == \
+        r"\frac{4^{- x}}{4}"
+
+    assert latex(3*x**2*y/z, mul_symbol=r'\,') == \
+        r"\frac{3\,x^{2}\,y}{z}"
+    assert latex(3*x**2*y, mode='inline', mul_symbol=r'\,') == \
+        r"$3\,x^{2}\,y$"
+    assert latex(Integral(2*x**2*y, x), mul_symbol=r'\,') == \
+        r"\int 2\,x^{2}\,y\, dx"
+
+    printer = LatexPrinter({'mul_symbol': r'\,'})
+    assert printer.doprint(3*x**2*y) == latex(3*x**2*y, mul_symbol=r'\,')
+    assert latex(3*x**2*y) == r"3 x^{2} y"
+
+    R, x1, y1 = ring('x,y', ZZ)
+    assert latex(3*x1**2*y1, mul_symbol=r'\,') == r"3\,{x}^{2}\,y"
 
 
 def test_latex_issue_4381():
