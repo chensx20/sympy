@@ -1,4 +1,4 @@
-from sympy.core import S
+from sympy.core import S, Symbol
 from sympy.core.relational import Eq, Ne
 from sympy.logic.boolalg import BooleanFunction
 from sympy.utilities.misc import func_name
@@ -45,4 +45,7 @@ class Contains(BooleanFunction):
             isinstance(i, (Eq, Ne))])
 
     def as_set(self):
+        element, set = self.args
+        if isinstance(element, Symbol):
+            return set
         raise NotImplementedError()

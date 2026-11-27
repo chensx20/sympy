@@ -6,7 +6,9 @@ from sympy.core.singleton import S
 from sympy.core.symbol import (Dummy, symbols)
 from sympy.functions import Piecewise
 from sympy.functions.elementary.trigonometric import cos, sin
+from sympy.sets.fancysets import Range
 from sympy.sets.sets import (Interval, Union)
+from sympy.sets.contains import Contains
 from sympy.simplify.simplify import simplify
 from sympy.logic.boolalg import (
     And, Boolean, Equivalent, ITE, Implies, Nand, Nor, Not, Or,
@@ -876,6 +878,8 @@ def test_bool_as_set():
     raises(NotImplementedError, lambda: (sin(x) < 1).as_set())
     # watch for object morph in as_set
     assert Eq(-1, cos(2*x)**2/sin(2*x)**2).as_set() is S.EmptySet
+    assert And(Contains(x, S.Integers), x < 3).as_set() == \
+        Range(-oo, 3)
 
 
 @XFAIL
