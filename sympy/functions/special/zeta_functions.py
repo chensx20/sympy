@@ -116,8 +116,7 @@ class lerchphi(Function):
     """
 
     def _eval_expand_func(self, **hints):
-        from sympy import (exp, I, floor, Add, Poly, Dummy, exp_polar,
-                           unpolarify, expand_func)
+        from sympy import exp, I, floor, Add, Poly, Dummy, exp_polar, unpolarify
         z, s, a = self.args
         if z == 1:
             return zeta(s, a)
@@ -157,7 +156,7 @@ class lerchphi(Function):
             zet = exp_polar(2*pi*I/n)
             root = z**(1/n)
             return add + mul*n**(s - 1)*Add(
-                *[expand_func(polylog(s, zet**k*root))
+                *[polylog(s, zet**k*root)._eval_expand_func(**hints)
                   / (unpolarify(zet)**k*root)**m for k in range(n)])
 
         # TODO use minpoly instead of ad-hoc methods when issue 5888 is fixed
@@ -254,7 +253,7 @@ class polylog(Function):
     >>> from sympy import expand_func
     >>> from sympy.abc import z
     >>> expand_func(polylog(1, z))
-    -log(-z + 1)
+    -log(z*exp_polar(-I*pi) + 1)
     >>> expand_func(polylog(0, z))
     z/(-z + 1)
 
@@ -278,8 +277,6 @@ class polylog(Function):
             return -dirichlet_eta(s)
         elif z == 0:
             return 0
-        elif s.is_Integer and s == 2 and z.is_Rational and z == S.Half:
-            return pi**2/12 - log(2)**2/2
 
     def fdiff(self, argindex=1):
         s, z = self.args
@@ -292,12 +289,9 @@ class polylog(Function):
 
     def _eval_expand_func(self, **hints):
         from sympy import log, expand_mul, Dummy, exp_polar, I
-        from sympy.core.basic import preorder_traversal
         s, z = self.args
         if s == 1:
-            if any(expr.is_polar is True for expr in preorder_traversal(z)):
-                return -log(1 + exp_polar(-I*pi)*z)
-            return -log(1 - z)
+            return -log(1 + exp_polar(-I*pi)*z)
         if s.is_Integer and s <= 0:
             u = Dummy('u')
             start = u/(1 - u)
