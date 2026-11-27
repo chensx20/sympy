@@ -56,6 +56,16 @@ def test_Routine_argument_order():
     assert [ arg.name for arg in r.arguments ] == [z, x, a, y]
 
 
+def test_unused_matrix_argument_dimensions():
+    x = MatrixSymbol('x', 2, 1)
+    y = symbols('y')
+    routine = make_routine('test', 1.0, argument_sequence=[x, y])
+
+    assert [arg.name for arg in routine.arguments] == [x, y]
+    assert routine.arguments[0].dimensions == [(0, 1), (0, 0)]
+    assert routine.arguments[1].dimensions is None
+
+
 def test_empty_c_code():
     code_gen = C89CodeGen()
     source = get_string(code_gen.dump_c, [])
