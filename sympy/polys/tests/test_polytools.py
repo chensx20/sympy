@@ -2331,6 +2331,20 @@ def test_sqf():
     assert sqf_list(f) == (1, [(x + 1, 40000000000)])
 
 
+def test_sqf_list_equal_multiplicities():
+    f = (x**2 + 1)*(x - 1)**2*(x - 2)**3*(x - 3)**3
+    g = (x - 4)*(x - 5)
+
+    assert sqf_list(f) == (1, [(x**2 + 1, 1), (x - 1, 2),
+                               (x**2 - 5*x + 6, 3)])
+    assert sqf_list(f, polys=True) == (1, [
+        (Poly(x**2 + 1), 1), (Poly(x - 1), 2),
+        (Poly(x**2 - 5*x + 6), 3)])
+    assert sqf_list(f/g, frac=True) == (1,
+        [(x**2 + 1, 1), (x - 1, 2), (x**2 - 5*x + 6, 3)],
+        [(x**2 - 9*x + 20, 1)])
+
+
 def test_factor():
     f = x**5 - x**3 - x**2 + 1
 
@@ -3273,7 +3287,7 @@ def test_to_rational_coeffs():
 def test_factor_terms():
     # issue 7067
     assert factor_list(x*(x + y)) == (1, [(x, 1), (x + y, 1)])
-    assert sqf_list(x*(x + y)) == (1, [(x, 1), (x + y, 1)])
+    assert sqf_list(x*(x + y)) == (1, [(x**2 + x*y, 1)])
 
 
 def test_as_list():

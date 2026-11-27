@@ -5995,6 +5995,15 @@ def _generic_factor_list(expr, gens, args, method):
                     f, _ = _poly_from_expr(f, _opt)
                     factors[i] = (f, k)
 
+            if method == 'sqf':
+                by_multiplicity = {}
+                for f, k in factors:
+                    if k in by_multiplicity:
+                        by_multiplicity[k] *= f
+                    else:
+                        by_multiplicity[k] = f
+                factors[:] = [(f, k) for k, f in by_multiplicity.items()]
+
         fp = _sorted_factors(fp, method)
         fq = _sorted_factors(fq, method)
 
