@@ -349,6 +349,14 @@ class AbstractPythonCodePrinter(CodePrinter):
 
 class PythonCodePrinter(AbstractPythonCodePrinter):
 
+    def _print_IndexedBase(self, expr):
+        return self._print(expr.label)
+
+    def _print_Indexed(self, expr):
+        base = self._print(expr.base)
+        indices = ', '.join(self._print(index) for index in expr.indices)
+        return '{}[{}]'.format(base, indices)
+
     def _print_sign(self, e):
         return '(0.0 if {e} == 0 else {f}(1, {e}))'.format(
             f=self._module_format('math.copysign'), e=self._print(e.args[0]))
