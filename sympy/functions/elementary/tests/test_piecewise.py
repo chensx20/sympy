@@ -18,11 +18,11 @@ from sympy.functions.elementary.piecewise import (Piecewise,
 from sympy.functions.elementary.trigonometric import (cos, sin)
 from sympy.functions.special.delta_functions import (DiracDelta, Heaviside)
 from sympy.functions.special.tensor_functions import KroneckerDelta
+from sympy.sets.contains import Contains
 from sympy.integrals.integrals import (Integral, integrate)
 from sympy.logic.boolalg import (And, ITE, Not, Or)
 from sympy.matrices.expressions.matexpr import MatrixSymbol
 from sympy.printing import srepr
-from sympy.sets.contains import Contains
 from sympy.sets.sets import Interval
 from sympy.solvers.solvers import solve
 from sympy.testing.pytest import raises, slow
@@ -864,6 +864,8 @@ def test_as_expr_set_pairs():
 
     assert Piecewise(((x - 2)**2, x >= 0), (0, True)).as_expr_set_pairs() == \
         [((x - 2)**2, Interval(0, oo)), (0, Interval(-oo, 0, True, True))]
+    assert Piecewise((x, Contains(x, S.Reals)), (0, True)).as_expr_set_pairs() == \
+        [(x, S.Reals)]
 
 
 def test_S_srepr_is_identity():
