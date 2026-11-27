@@ -151,6 +151,10 @@ def test_polylog_expansion_branching():
     p = Symbol('p', polar=True)
     assert expand_func(polylog(1, p)) == \
         -log(1 + exp_polar(-I*pi)*p)
+    assert expand_func(polylog(1, z*exp_polar(2*pi*I))) == \
+        -log(1 + z*exp_polar(I*pi))
+    assert expand_func(polylog(1, z*exp_polar(-2*pi*I))) == \
+        -log(1 + z*exp_polar(-3*I*pi))
     assert expand_func(polylog(1, p + z)) == \
         -log(1 + exp_polar(-I*pi)*(p + z))
     assert expand_func(polylog(1, polar_lift(z))) == \
