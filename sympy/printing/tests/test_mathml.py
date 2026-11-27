@@ -44,6 +44,13 @@ def test_mathml_printer():
     assert m.doprint(1+x) == mp.doprint(1+x)
 
 
+def test_mathml_unicode_implicit_subscript():
+    implicit = Symbol('\u03c90')
+    explicit = Symbol('\u03c9_0')
+    assert mathml(implicit, printer='content') == mathml(explicit, printer='content')
+    assert mathml(implicit, printer='presentation') == mathml(explicit, printer='presentation')
+
+
 def test_content_printmethod():
     assert mp.doprint(1 + x) == '<apply><plus/><ci>x</ci><cn>1</cn></apply>'
 
