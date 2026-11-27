@@ -344,6 +344,7 @@ def test_Rational_new():
     assert Rational('0.5', '100') == Rational(1, 200)
     assert Rational('0.5', 100) == Rational(1, 200)
     assert Rational(0.5, '100') == Rational(1, 200)
+    assert Rational('0.5', Rational(1, 2)) == 1
     assert Rational(1.0, 3) == Rational(1, 3)
     assert Rational(1, 3.0) == Rational(1, 3)
     assert Rational(Float(0.5)) == S.Half
