@@ -252,6 +252,8 @@ def test_PolyElement_copy():
 def test_PolyElement_as_expr():
     R, x, y, z = ring("x,y,z", ZZ)
     f = 3*x**2*y - x*y*z + 7*z**3 + 1
+    original = f.copy()
+    original_symbols = R.symbols
 
     X, Y, Z = R.symbols
     g = 3*X**2*Y - X*Y*Z + 7*Z**3 + 1
@@ -265,10 +267,24 @@ def test_PolyElement_as_expr():
     assert f != g
     assert f.as_expr(X, Y, Z) == g
 
-    raises(ValueError, lambda: f.as_expr(X))
+    U, V, W = symbols("u,v,w")
+    replaced = 3*U**2*V - U*V*W + 7*W**3 + 1
+
+    assert f.as_expr(U, V, W) == replaced
+    assert f.as_expr(W, V, U) == 3*W**2*V - W*V*U + 7*U**3 + 1
+    assert f.as_expr() == g
+    raises(ValueError, lambda: f.as_expr(U, V))
+    raises(ValueError, lambda: f.as_expr(U, V, W, X))
+
+    assert R.zero.as_expr(U, V, W) == 0
+    assert R(3).as_expr(U, V, W) == 3
+    assert f == original
+    assert R.symbols == original_symbols
 
     R, = ring("", ZZ)
     assert R(3).as_expr() == 3
+    assert R.zero.as_expr() == 0
+    raises(ValueError, lambda: R(3).as_expr(X))
 
 def test_PolyElement_from_expr():
     x, y, z = symbols("x,y,z")
