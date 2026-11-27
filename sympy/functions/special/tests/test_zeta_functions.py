@@ -1,6 +1,6 @@
 from sympy import (Symbol, zeta, nan, Rational, Float, pi, dirichlet_eta, log,
                    zoo, expand_func, polylog, lerchphi, S, exp, sqrt, I,
-                   exp_polar, polar_lift, O, stieltjes)
+                    exp_polar, polar_lift, O, stieltjes, hyper, hyperexpand)
 from sympy.utilities.randtest import (test_derivative_numerically as td,
                       random_complex_number as randcplx, verify_numerically as tn)
 
@@ -128,15 +128,47 @@ def test_polylog_expansion():
     assert polylog(s, 1) == zeta(s)
     assert polylog(s, -1) == -dirichlet_eta(s)
 
-    assert myexpand(polylog(1, z), -log(1 + exp_polar(-I*pi)*z))
+    assert polylog(1, z) == polylog(1, z, evaluate=False)
+    assert expand_func(polylog(1, z)) == -log(1 - z)
+    assert expand_func(polylog(1, S.Half)) == log(2)
+    assert expand_func(polylog(1, 2)) == -I*pi
+    assert expand_func(polylog(1, -2)) == -log(3)
     assert myexpand(polylog(0, z), z/(1 - z))
     assert myexpand(polylog(-1, z), z**2/(1 - z)**2 + z/(1 - z))
     assert myexpand(polylog(-5, z), None)
 
 
+def test_polylog_half():
+    value = pi**2/12 - log(2)**2/2
+    assert polylog(2, S.Half) == value
+    assert expand_func(polylog(2, S.Half, evaluate=False)) == value
+    assert polylog(s, S.Half) == polylog(s, S.Half, evaluate=False)
+    assert isinstance(polylog(2, Float('0.5')), polylog)
+    assert hyperexpand(S.Half*hyper([1, 1, 1], [2, 2], S.Half)) == value
+
+
+def test_polylog_expansion_branching():
+    p = Symbol('p', polar=True)
+    assert expand_func(polylog(1, p)) == \
+        -log(1 + exp_polar(-I*pi)*p)
+    assert expand_func(polylog(1, p + z)) == \
+        -log(1 + exp_polar(-I*pi)*(p + z))
+    assert expand_func(polylog(1, polar_lift(z))) == \
+        -log(1 + exp_polar(-I*pi)*polar_lift(z))
+
+
+def test_polylog_derivatives_and_numerics():
+    assert expand_func(polylog(2, z).diff(z)) == -log(1 - z)/z
+    for value in (2 + I/1000, 2 - I/1000):
+        assert abs(polylog(2, value).n() -
+                   expand_func(polylog(2, value)).n()) < 1e-10
+
+
 def test_lerchphi_expansion():
     assert myexpand(lerchphi(1, s, a), zeta(s, a))
     assert myexpand(lerchphi(z, s, 1), polylog(s, z)/z)
+    assert expand_func(lerchphi(S.Half, 2, 1)) == \
+        pi**2/6 - log(2)**2
 
     # direct summation
     assert myexpand(lerchphi(z, -1, a), a/(1 - z) + z/(1 - z)**2)
