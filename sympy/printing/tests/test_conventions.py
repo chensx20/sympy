@@ -32,6 +32,21 @@ def test_super_sub():
     assert split_super_sub("") == ("", [], [])
 
 
+def test_super_sub_unicode_names():
+    assert split_super_sub("\u03c90") == ("\u03c9", [], ["0"])
+    assert split_super_sub("\u03a912") == ("\u03a9", [], ["12"])
+    assert split_super_sub("\u03b2001") == ("\u03b2", [], ["001"])
+    assert split_super_sub("\u03b1\u03b212") == ("\u03b1\u03b2", [], ["12"])
+    assert split_super_sub("\u03c90_1^2") == ("\u03c9", ["2"], ["0", "1"])
+    assert split_super_sub("x12") == ("x", [], ["12"])
+    assert split_super_sub("x_12") == ("x", [], ["12"])
+    assert split_super_sub("123") == ("123", [], [])
+    assert split_super_sub("x1y2") == ("x1y2", [], [])
+    assert split_super_sub("\u03c91x2") == ("\u03c91x2", [], [])
+    assert split_super_sub("\u03c9 12") == ("\u03c9 12", [], [])
+    assert split_super_sub("\u03c9-12") == ("\u03c9-12", [], [])
+
+
 def test_requires_partial():
     x, y, z, t, nu = symbols('x y z t nu')
     n = symbols('n', integer=True)

@@ -55,6 +55,10 @@ from sympy.sets.sets import \
 import sympy as sym
 
 
+def test_latex_unicode_implicit_subscript():
+    assert latex(Symbol('\u03c90')) == latex(Symbol('\u03c9_0'))
+
+
 class lowergamma(sym.lowergamma):
     pass   # testing notation inheritance by a subclass with same name
 
