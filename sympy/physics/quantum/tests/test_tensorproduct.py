@@ -1,4 +1,4 @@
-from sympy import I, symbols, Matrix
+from sympy import I, symbols, Matrix, Float, Pow, Rational, sqrt
 
 from sympy.physics.quantum.commutator import Commutator as Comm
 from sympy.physics.quantum.tensorproduct import TensorProduct
@@ -9,6 +9,8 @@ from sympy.physics.quantum.qubit import Qubit, QubitBra
 from sympy.physics.quantum.operator import OuterProduct
 from sympy.physics.quantum.density import Density
 from sympy.core.trace import Tr
+from sympy.physics.paulialgebra import Pauli
+from sympy.physics.quantum.qexpr import QuantumError
 
 A, B, C = symbols('A,B,C', commutative=False)
 x = symbols('x')
@@ -49,6 +51,38 @@ def test_tensor_product_simp():
     assert tensor_product_simp(TP(A, B)*TP(B, C)) == TP(A*B, B*C)
 
 
+def test_tensor_product_power():
+    n = symbols('n', integer=True)
+    assert TP(1, 1)**2 == TP(1, 1)
+    assert TP(1, Pauli(3))**2 == TP(1, 1)
+    assert TP(A, B, C)**3 == TP(A**3, B**3, C**3)
+    assert TP(A, B)**-2 == TP(A**-2, B**-2)
+    assert TP(A, B)**Rational(1, 2) == sqrt(TP(A, B))
+    assert TP(A, B)**x == TP(A, B)**x
+    assert TP(A, B)**n == TP(A, B)**n
+    assert isinstance(TP(A, B)**Float(2), Pow)
+
+
+def test_tensor_product_power_in_product():
+    power = Pow(TP(A, B), 2, evaluate=False)
+    assert tensor_product_simp(3*power*TP(C, A)) == \
+        3*TP(A**2*C, B**2*A)
+    assert tensor_product_simp(TP(A, B)*Pow(TP(C, A), x,
+                                            evaluate=False)) == \
+        TP(A, B)*Pow(TP(C, A), x, evaluate=False)
+    simplified = tensor_product_simp(power*TP(C, A))
+    assert tensor_product_simp(simplified) == simplified
+
+
+def test_tensor_product_power_arity_mismatch():
+    try:
+        tensor_product_simp(TP(A, B)*TP(C, A, B))
+    except QuantumError:
+        pass
+    else:
+        assert False
+
+
 def test_issue_5923():
     # most of the issue regarding sympification of args has been handled
     # and is tested internally by the use of args_cnc through the quantum
@@ -59,8 +93,8 @@ def test_issue_5923():
 
 def test_eval_trace():
     # This test includes tests with dependencies between TensorProducts
-    #and density operators. Since, the test is more to test the behavior of
-    #TensorProducts it remains here
+    # and density operators. Since, the test is more to test the behavior of
+    # TensorProducts it remains here
 
     A, B, C, D, E, F = symbols('A B C D E F', commutative=False)
 
@@ -70,7 +104,7 @@ def test_eval_trace():
     tr = Tr(d)
     assert tr.doit() == 1.0*Tr(A*Dagger(A))*Tr(B*Dagger(B))
 
-    ## partial trace with simple tensor products as args
+    # partial trace with simple tensor products as args
     t = TensorProduct(A, B, C)
     d = Density([t, 1.0])
     tr = Tr(d, [1])
@@ -92,16 +126,16 @@ def test_eval_trace():
     assert t.doit() == (0.5*Tr(A*Dagger(A))*B*Dagger(B) +
                         0.5*Tr(C*Dagger(C))*D*Dagger(D))
 
-    #Density with mixed states
+    # Density with mixed states
     d = Density([t2 + t3, 1.0])
     t = Tr(d)
-    assert t.doit() == ( 1.0*Tr(A*Dagger(A))*Tr(B*Dagger(B)) +
+    assert t.doit() == (1.0*Tr(A*Dagger(A))*Tr(B*Dagger(B)) +
                         1.0*Tr(A*Dagger(C))*Tr(B*Dagger(D)) +
                         1.0*Tr(C*Dagger(A))*Tr(D*Dagger(B)) +
                         1.0*Tr(C*Dagger(C))*Tr(D*Dagger(D)))
 
-    t = Tr(d, [1] )
-    assert t.doit() == ( 1.0*A*Dagger(A)*Tr(B*Dagger(B)) +
+    t = Tr(d, [1])
+    assert t.doit() == (1.0*A*Dagger(A)*Tr(B*Dagger(B)) +
                         1.0*A*Dagger(C)*Tr(B*Dagger(D)) +
                         1.0*C*Dagger(A)*Tr(D*Dagger(B)) +
                         1.0*C*Dagger(C)*Tr(D*Dagger(D)))

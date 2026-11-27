@@ -23,9 +23,9 @@ __all__ = [
     'tensor_product_simp'
 ]
 
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Tensor product
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 _combined_printing = False
 
@@ -143,6 +143,10 @@ class TensorProduct(Expr):
     def _eval_adjoint(self):
         return TensorProduct(*[Dagger(i) for i in self.args])
 
+    def _eval_power(self, exp):
+        if exp.is_Integer:
+            return TensorProduct(*[arg**exp for arg in self.args])
+
     def _eval_rewrite(self, pattern, rule, **hints):
         sargs = self.args
         terms = [t._eval_rewrite(pattern, rule, **hints) for t in sargs]
@@ -196,12 +200,12 @@ class TensorProduct(Expr):
             next_pform = printer._print(self.args[i], *args)
             if isinstance(self.args[i], (Add, Mul)):
                 next_pform = prettyForm(
-                    *next_pform.parens(left='(', right=')')
-                )
+                    *next_pform.parens(left='(', right=')'))
             pform = prettyForm(*pform.right(next_pform))
             if i != length - 1:
                 if printer._use_unicode:
-                    pform = prettyForm(*pform.right(u'\N{N-ARY CIRCLED TIMES OPERATOR}' + u' '))
+                    pform = prettyForm(*pform.right(
+                        u'\N{N-ARY CIRCLED TIMES OPERATOR}' + u' '))
                 else:
                     pform = prettyForm(*pform.right('x' + ' '))
         return pform
@@ -242,7 +246,6 @@ class TensorProduct(Expr):
         """Distribute TensorProducts across addition."""
         args = self.args
         add_args = []
-        stop = False
         for i in range(len(args)):
             if isinstance(args[i], Add):
                 for aa in args[i].args:
@@ -314,31 +317,28 @@ def tensor_product_simp_Mul(e):
     # TODO: This only works for the equivalent of single Qbit gates.
     if not isinstance(e, Mul):
         return e
+    simplified_args = [tensor_product_simp(arg) for arg in e.args]
+    if simplified_args != list(e.args):
+        return tensor_product_simp(Mul(*simplified_args))
     c_part, nc_part = e.args_cnc()
     n_nc = len(nc_part)
     if n_nc == 0 or n_nc == 1:
         return e
     elif e.has(TensorProduct):
+        if not all(isinstance(term, TensorProduct) for term in nc_part):
+            return e
         current = nc_part[0]
-        if not isinstance(current, TensorProduct):
-            raise TypeError('TensorProduct expected, got: %r' % current)
         n_terms = len(current.args)
         new_args = list(current.args)
         for next in nc_part[1:]:
             # TODO: check the hilbert spaces of next and current here.
-            if isinstance(next, TensorProduct):
-                if n_terms != len(next.args):
-                    raise QuantumError(
-                        'TensorProducts of different lengths: %r and %r' %
-                        (current, next)
-                    )
-                for i in range(len(new_args)):
-                    new_args[i] = new_args[i] * next.args[i]
-            else:
-                # this won't quite work as we don't want next in the
-                # TensorProduct
-                for i in range(len(new_args)):
-                    new_args[i] = new_args[i] * next
+            if n_terms != len(next.args):
+                raise QuantumError(
+                    'TensorProducts of different lengths: %r and %r' %
+                    (current, next)
+                )
+            for i in range(len(new_args)):
+                new_args[i] = new_args[i] * next.args[i]
             current = next
         return Mul(*c_part) * TensorProduct(*new_args)
     else:
@@ -376,13 +376,21 @@ def tensor_product_simp(e, **hints):
     commutators and anticommutators as well:
 
     >>> tensor_product_simp(e**2)
-    (A*C)x(B*D)**2
+    ((A*C)**2)x((B*D)**2)
+
+    Concrete integer powers distribute over the tensor-product slots:
+
+    >>> tensor_product_simp(TensorProduct(A, B)**2)
+    (A**2)x(B**2)
 
     """
     if isinstance(e, Add):
         return Add(*[tensor_product_simp(arg) for arg in e.args])
     elif isinstance(e, Pow):
-        return tensor_product_simp(e.base) ** e.exp
+        base = tensor_product_simp(e.base)
+        if isinstance(base, TensorProduct) and e.exp.is_Integer:
+            return TensorProduct(*[arg**e.exp for arg in base.args])
+        return base ** e.exp
     elif isinstance(e, Mul):
         return tensor_product_simp_Mul(e)
     elif isinstance(e, Commutator):
